@@ -94,18 +94,18 @@ Use `certbot --nginx -d kb.host` to provision the certificate.
 
 ```sh
 curl http://127.0.0.1:30700/
-# {"ok":true,"service":"kb-daemon","version":"0.1.0","groups":["read","search","write","localFs","indexAdmin"]}
+# {"ok":true,"service":"kb-daemon","version":"0.1.0","groups":["localFs","read","search","write","indexAdmin"]}
 ```
 
 Through the proxy (with TLS):
 
 ```sh
 curl https://kb.host/
-# {"ok":true,"service":"kb-daemon","version":"0.1.0","groups":["read","search","write","localFs","indexAdmin"]}
+# {"ok":true,"service":"kb-daemon","version":"0.1.0","groups":["localFs","read","search","write","indexAdmin"]}
 ```
 
 Use this to confirm the daemon is running and to see the available groups
-(`read`, `search`, `write`, `localFs`, `indexAdmin`). The `write` group is
+(`localFs`, `read`, `search`, `write`, `indexAdmin`). The `write` group is
 present when the daemon is fronted by a proxy — remote clients use it via
 `kb_put`/`kb_delete`.
 
@@ -297,7 +297,7 @@ groups list is the same for every daemon (non-sensitive):
   "ok": true,
   "service": "kb-daemon",
   "version": "0.1.0",
-  "groups": ["read", "search", "write", "localFs", "indexAdmin"]
+  "groups": ["localFs", "read", "search", "write", "indexAdmin"]
 }
 ```
 
