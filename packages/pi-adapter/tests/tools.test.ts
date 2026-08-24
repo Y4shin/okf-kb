@@ -188,6 +188,23 @@ describe('pi extension: round-trip', () => {
     const slugs = neighbors.map((r: { slug?: string }) => r.slug);
     expect(slugs).toContain('round-trip-note-b');
   });
+
+  it('tool execute fn returns the same data as the tRPC client (end-to-end via pi execute)', async () => {
+    const pi = createStubPi();
+    const client = makeClient();
+    registerKbTools(pi, client);
+
+    const getTool = pi.tools.get('kb_get')!;
+    const result = await getTool.execute('test-id', { ref: refA }, undefined, undefined, {} as never);
+
+    expect(result.content).toHaveLength(1);
+    expect(result.content[0].type).toBe('text');
+    const text = (result.content[0] as { text: string }).text;
+    const parsed = JSON.parse(text);
+    expect(parsed.ref).toEqual({ slug: 'round-trip-note-a', ty: 'concept' });
+    expect(parsed.frontmatter.title).toBe('Round Trip Note A');
+    expect(parsed.body).toContain('round trip concept');
+  });
 });
 
 describe('pi extension: error mapping', () => {
