@@ -53,6 +53,21 @@ export class FsSearch implements Search {
     }
   }
 
+  /** Normalize a relation target or markdown-link href (either `type:slug` or a
+   * relative/absolute path) to the note's relative path, for consistent graph edges. */
+  private targetToPath(target: string): string {
+    const ref = parseRef(target);
+    if ('slug' in ref) {
+      try {
+        const { path } = this.localFs.resolvePath({ ref });
+        return relative(this.deps.space, path);
+      } catch {
+        return target;
+      }
+    }
+    return ref.path.replace(/^\//, '');
+  }
+
   private async noteTitle(notePath: string): Promise<string> {
     try {
       const raw = await readFile(join(this.deps.space, notePath), 'utf-8');
@@ -213,14 +228,16 @@ export class FsSearch implements Search {
       insertChunk.run(notePath, JSON.stringify(chunk.headingPath), idx++, chunk.text, JSON.stringify(vec), vec.length);
     }
 
-    // graph edges: typed relations + prose markdown links
+    // graph edges: typed relations + prose markdown links. Relation targets may be
+    // an id (type:slug) or a path; normalize both to the relative note_path so
+    // graph() joins consistently regardless of which form authors used.
     const insertEdge = this.db.raw.prepare(`INSERT INTO graph_edges(source_path, target_path, predicate, dir) VALUES (?, ?, ?, ?)`);
     const relations = Array.isArray(frontmatter.relations) ? (frontmatter.relations as Array<{ predicate: string; target: string }>) : [];
     for (const rel of relations) {
-      insertEdge.run(notePath, rel.target.replace(/^\//, ''), rel.predicate, 'relation');
+      insertEdge.run(notePath, this.targetToPath(rel.target), rel.predicate, 'relation');
     }
     for (const link of extractMarkdownLinks(body)) {
-      insertEdge.run(notePath, link.replace(/^\//, ''), null, 'link');
+      insertEdge.run(notePath, this.targetToPath(link), null, 'link');
     }
   }
 
@@ -243,10 +260,15 @@ export class FsSearch implements Search {
 }
 
 function matchQuery(q: string): string {
-  // FTS5 MATCH syntax: quote the query to treat it as a phrase-ish token match,
-  // tolerant of punctuation in the raw query.
-  const escaped = q.replace(/"/g, '""');
-  return `"${escaped}"`;
+  // FTS5 MATCH syntax: OR-join sanitized tokens so any shared vocabulary word
+  // matches (bm25 ranks documents with more/better matches higher), rather than
+  // requiring the full query as one exact phrase.
+  const tokens = q
+    .split(/\s+/)
+    .map((t) => t.replace(/[^a-zA-Z0-9]/g, ''))
+    .filter(Boolean)
+    .map((t) => `"${t}"`);
+  return tokens.length ? tokens.join(' OR ') : '""';
 }
 
 export type { BundleNote };
