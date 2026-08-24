@@ -39,3 +39,19 @@ fabricate, conflicting-sources→separate entries). Pure-markdown skills on
 the `kb_*` tools; auto-gated by content/structure tests (44 tests across
 the 3 skills; 178 total). `install:pi` now globs `skill/*`. Human review of
 note quality is a follow-up task. `tsc --strict` clean.
+
+## 2026-08-24 — Remote-agent daemon access (remote-daemon-conditional-write)
+
+The KB daemon can be exposed to other machines: `startDaemon` takes a
+`host` (default `127.0.0.1`) and **refuses a non-localhost bind without TLS**
+(`KB_DAEMON_TLS_CERT`/`KEY` or the `KB_ALLOW_REMOTE_INSECURE=1` escape
+hatch, which warns). `GET /` advertises capabilities (`groups` from
+`fullBindings`). The pi adapter's `isRemoteKb(KB_URL)` conditionally
+activates `kb_put`/`kb_delete` (full `AppRouter` + `fullBindings`, 10
+tools) when remote — a remote agent authors **through the daemon** since
+its native `write`/`edit` can't reach the remote bundle. Localhost behavior
+unchanged (8 tools, no `kb_put`/`kb_delete`). **Recommended** path: daemon
+on `127.0.0.1` + a caddy/nginx TLS reverse proxy (`docs/remote-deployment.md`
+with systemd + caddyfile snippets, threat model, governance). 217 tests +
+1 skipped, `tsc --strict` clean. Backwards compatible. Graduates the map's
+"multi-agent adoption / remote deployment" Fog item.
