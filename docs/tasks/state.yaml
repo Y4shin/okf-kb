@@ -1,2 +1,2 @@
-task: None
-slice: None
+task: pi-adapter-skill-and-tools
+slice: kb-tools-extension
