@@ -41,11 +41,12 @@ const SearchParams = Type.Object({
   })),
 });
 
-// kb_graph: search.graph({ref, dir, predicate?})
+// kb_graph: search.graph({ref, dir})
+// (predicate filter is NOT in the daemon's GraphInputSchema — omitted to avoid schema drift;
+// the daemon's graph() impl reads an optional predicate but the tRPC input schema doesn't carry it.)
 const GraphParams = Type.Object({
   ref: RefParam,
   dir: DirEnum,
-  predicate: Type.Optional(Type.String()),
 });
 
 // kb_update: search.update({ref, content}) — mutation
@@ -142,15 +143,20 @@ export function registerKbTools(pi: ExtensionAPI, client: KbClient): void {
             details: {},
           };
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          return {
-            content: [{ type: 'text' as const, text: msg }],
-            details: { error: true },
-            // rule: isError-on-result — pi's AgentToolResult has no isError field;
-            // errors are signaled by throwing. We return the error message as text
-            // content so the agent can react. (The test asserts isError via a
-            // custom marker in details.)
-          };
+          // pi's AgentToolResult has no isError field — the tool contract is "throw on failure"
+          // so the pi runtime marks the result as an error (isError=true in tool_execution_end)
+          // and the agent can react. Wrap with a clear message; classify the common cases.
+          const raw = err instanceof Error ? err.message : String(err);
+          let msg: string;
+          if (/401|unauthorized|UNAUTHORIZED/i.test(raw)) {
+            msg = `KB daemon auth failed (check KB_TOKEN): ${raw}`;
+          } else if (/fetch|econnrefused|connect|network|unreachable|ECONN/i.test(raw)) {
+            const url = process.env.KB_URL ?? 'http://127.0.0.1:3000';
+            msg = `KB daemon not running at ${url}: ${raw}`;
+          } else {
+            msg = raw;
+          }
+          throw new Error(msg);
         }
       },
     });

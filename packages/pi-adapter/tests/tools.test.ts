@@ -208,21 +208,18 @@ describe('pi extension: round-trip', () => {
 });
 
 describe('pi extension: error mapping', () => {
-  it('kb_get returns an error result when daemon is unreachable', async () => {
+  it('kb_get throws a clear error when daemon is unreachable (pi contract: throw on failure)', async () => {
     // Build a client pointing at a dead URL (port that's not listening)
     const deadClient = createKbTrpcClient('http://127.0.0.1:1', 'test-daemon-token');
     const pi = createStubPi();
     registerKbTools(pi, deadClient);
 
     const getTool = pi.tools.get('kb_get')!;
-    const result = await getTool.execute('test-id', { ref: 'concept:nonexistent' }, undefined, undefined, {} as never);
 
-    // The tool should return error content (caught the network error)
-    expect(result.content).toHaveLength(1);
-    expect(result.content[0].type).toBe('text');
-    const text = (result.content[0] as { text: string }).text;
-    expect(text.length).toBeGreaterThan(0);
-    // Should contain a clear message about the connection failure
-    expect(text.toLowerCase()).toMatch(/fetch|econnrefused|connect|network|unreachable|error/);
+    // pi's AgentToolResult has no isError field; the tool contract is "throw on failure"
+    // so the pi runtime marks isError=true. The execute fn throws with a clear message.
+    await expect(
+      getTool.execute('test-id', { ref: 'concept:nonexistent' }, undefined, undefined, {} as never),
+    ).rejects.toThrow(/KB daemon not running at http:\/\/127\.0\.0\.1:1|fetch|econnrefused|connect|network|unreachable|ECONN/i);
   });
 });
