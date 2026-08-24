@@ -1,2 +1,2 @@
 task: remote-daemon-conditional-write
-slice: daemon-bind-tls-capabilities
+slice: remote-deployment-doc-and-roundtrip

@@ -1,12 +1,13 @@
 ---
 kind: slice
 slug: remote-deployment-doc-and-roundtrip
-title: "Remote deployment guide + security threat model + remote kb_put→kb_get governance round-trip"
+title: Remote deployment guide + security threat model + remote kb_put→kb_get governance round-trip
 task: ../task.md
 mode: hitl
 status: done
 size: m
-blocked_by: [pi-adapter-conditional-write]
+blocked_by:
+- pi-adapter-conditional-write
 ---
 
 ## End-to-end behavior

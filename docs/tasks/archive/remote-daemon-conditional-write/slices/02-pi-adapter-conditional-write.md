@@ -6,7 +6,8 @@ task: ../task.md
 mode: afk
 status: done
 size: m
-blocked_by: [daemon-bind-tls-capabilities]
+blocked_by:
+- daemon-bind-tls-capabilities
 ---
 
 ## End-to-end behavior
