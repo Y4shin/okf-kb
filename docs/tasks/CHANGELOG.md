@@ -25,3 +25,17 @@ instructions: retrieve → lifecycle filter → context budget → grounded answ
 115 tests + 1 skipped pass, `tsc --strict` clean. Install via `npm run
 install:pi` (symlinks into `~/.pi/agent/`). Human review of answer/citation
 quality is a follow-up task (`review-kb-ask-qa-quality`).
+
+## 2026-08-24 — Second-brain curation skills (second-brain-curation)
+
+Three sibling pi skills for on-demand KB expansion: `kb-curate` (shared
+rules: 5-type selection with `generic` as gauge, provenance, lifecycle
+/never-self-promote/deprecate-with-consent, native-write + `kb_update` +
+`kb_check_id`, link-don't-duplicate, edit-anything+git), `kb-save-session`
+(distill the current session — extract-not-verbatim, sources→session
+transcript, re-distill links), `kb-research` (research a topic via
+`web_search`/`fetch_content` + repo into sourced notes — no-sources→don't
+fabricate, conflicting-sources→separate entries). Pure-markdown skills on
+the `kb_*` tools; auto-gated by content/structure tests (44 tests across
+the 3 skills; 178 total). `install:pi` now globs `skill/*`. Human review of
+note quality is a follow-up task. `tsc --strict` clean.

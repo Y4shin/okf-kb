@@ -101,6 +101,27 @@ lifecycle filter → context budget → grounded answer → cited (`[Title]
 (formatRef(ref))`) → verify-before-emit → "I don't know". The human review
 of answer/citation quality is a follow-up task (`review-kb-ask-qa-quality`).
 
+### Curation skills (second-brain expansion)
+
+Three sibling pi skills for on-demand KB expansion (installed by the
+same `npm run install:pi`, which now globs `skill/*`):
+- `kb-curate` (`/skill:kb-curate`) — the shared curation rules: type
+  selection over the 5 OKF types (`generic` is the gauge), provenance
+  (`generated.by = pi/<ver>/<model>` + `sources`), lifecycle
+  (draft/unverified, never self-promote, deprecate with consent),
+  authoring via native `write`/`edit` + `kb_update` + `kb_check_id`,
+  link-don't-duplicate via `kb_search`, edit-anything + git.
+- `kb-save-session` (`/skill:kb-save-session`) — distill the current
+  session into OKF notes (extract-not-verbatim; `sources` → the session
+  transcript; re-distill links).
+- `kb-research` (`/skill:kb-research`) — research a topic via
+  `web_search`/`fetch_content` + repo into sourced `reference`/`concept`/
+  `term` notes (no sources → don't fabricate; conflicting sources →
+  separate entries; narrow with the user if too broad).
+All three are pure-markdown skills built on the `kb_*` tools, auto-gated
+by content/structure tests. Human review of distilled/researched note
+quality is a follow-up task.
+
 ## Do not attempt AI reproduction for
 
 - The **stand-up-silverbullet** task (manual): requires running Docker and
