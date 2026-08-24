@@ -60,24 +60,60 @@ KB at `$KB_HOME`:
 ## Verdict
 
 - **`kb-ask` skill behavior: PASS** — refused correctly when retrieval was
-  broken (the hitl contract: "I don't know" + name what was tried). Did not
-  hallucinate or answer from general knowledge.
+  broken (the hitl contract: "I don't know" + name what was tried) and again
+  when the only hit was a deprecated note. Did not hallucinate or answer
+  from outside knowledge.
 - **Config/transport: was BROKEN, now FIXED** — the three defects above
   are resolved; the daemon+CLI+extension now agree on port 30700 by default
   and a shared `KB_TOKEN` env wins over per-user keyrings.
 - **Search relevance: PASS** — the obvious match is the top hit once the
   embeddings are warm.
-- **Remaining minor gap (not blocking)**: `searchUnified` returns hits with
-  **empty `snippet`** fields; the `kb-ask` skill's context-budget step will
-  `kb_get` the full note body (works, but coarser than using snippets). A
-  future nicety: populate snippets from the matched chunks.
+- **Skill tightened during review**: Step 2 (lifecycle filter) now says
+  deprecated notes are **DROPPED** (not cited, paraphrased, or flagged
+  inline); the first Q2 run had the agent flag+cite a deprecated note, the
+  post-fix Q2 run correctly dropped it and refused. Step 7 restates that a
+  deprecated note is not evidence.
 
-## Follow-up
+## Questions asked (non-interactive `pi -p`, daemon on 30700, shared token)
 
-The human review of **answer/citation quality on a successful retrieval**
-(lifecycle filter on deprecated/stale, citation form `[Title](concept:slug)`,
-verify-before-emit, context-budget truncation) should be re-run now that the
-transport works — start a pi session with `KB_TOKEN=review-test-token` (and
-optionally `KB_URL=http://127.0.0.1:30700`, though it's the default now) and
-re-ask the questions. This evidence covers the transport + the skill's
-refusal behavior; the successful-path quality is the remaining check.
+1. **`how does silverbullet pick up filesystem writes?`** (draft note) →
+   PASS. Grounded in `concept:silverbullet`; cited `[Silverbullet
+   filesystem-write pickup](concept:silverbullet)`; marked `[draft]` inline
+   (the note is `status: draft`). Facts match the note (notify crate,
+   `/.events` SSE, `SB_FS_WATCH=auto/off/poll`, ~20s fallback).
+2. **`what is the old vector store approach used by the KB?`** (deprecated
+   note) → PASS (after the Step 2 fix). The agent **dropped** the
+   `status: deprecated` `concept:old-approach` note and refused with "I
+   don't know", naming the query + the deprecated status + the empty graph
+   neighbors + the absence of a non-deprecated `decision` note. (Pre-fix
+   it had flagged+cited the deprecated note — the fix was needed.)
+3. **`what is the capital of France?`** (no match) → PASS. "I don't know";
+   named the query, the top hits, the ~0.03 scores below the ~0.25 floor;
+   explicitly refused outside knowledge ("Paris is the capital of France
+   is outside knowledge I'm permitted to use here").
+4. **`what does the OKF manifest drive in the knowledge base?`** (stable
+   note) → PASS. Grounded in `concept:okf-format`; cited `[OKF v0.2 manifest
+   as the data-driven spine](concept:okf-format)`; **no draft marker**
+   (stable, correct); stated "The citation resolves" (verify-before-emit
+   fired). Facts match (types/predicates/conventions/integrity checks;
+   A1–A7, B1–B5, B7, B8).
+5. **`give me everything in the KB about reciprocal rank fusion`** (context
+   budget) → PASS. Grounded in `term:rrf` (formula `1/(k+rank)`, `k≈60`,
+   damping, `searchUnified`, FTS5 + embedding cosine); cited; pulled
+   `concept:okf-format` as related context; **explicitly excluded** the
+   deprecated `concept:old-approach` ("intentionally excluded here — it
+   is not evidence"). No budget overflow (notes are short).
+
+## Remaining minor gap (not blocking)
+
+`searchUnified` returns hits with **empty `snippet`** fields; the `kb-ask`
+   context-budget step `kb_get`s the full note body (works, but coarser than
+   using snippets). A future nicety: populate snippets from the matched
+   chunks.
+
+## Outcome
+
+The `kb-ask` skill passes the human review. The transport defects found
+in the first session are fixed; the one skill-adherence gap (deprecated
+notes) is fixed and re-verified. The `conversational-qa-rag` slice's hitl
+gate is satisfied. Mark `review-kb-ask-qa-quality` done.

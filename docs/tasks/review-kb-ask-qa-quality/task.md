@@ -4,7 +4,7 @@ type: manual
 slug: review-kb-ask-qa-quality
 title: Human review of kb-ask answer/citation quality (hitl gate for the pi adapter)
 map: agent-knowledge-base
-status: ready
+status: done
 blocked_by: []
 ---
 
