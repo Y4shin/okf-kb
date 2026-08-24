@@ -11,9 +11,14 @@ const extSrc = join(process.cwd(), 'extension');
 
 const extDest = join(piAgentDir, 'extensions', 'pi-kb');
 
-// Each skill in packages/pi-adapter/skill/ gets its own symlink into
-// ~/.pi/agent/skills/<name>. Add new skill dirs here.
-const skills = ['kb-ask', 'kb-curate'];
+// Each skill dir in packages/pi-adapter/skill/ gets its own symlink into
+// ~/.pi/agent/skills/<name>. Glob all skill subdirectories so new skills
+// are picked up automatically without editing this list.
+import { readdir } from 'node:fs/promises';
+const skillDir = join(process.cwd(), 'skill');
+const skills = (await readdir(skillDir, { withFileTypes: true }))
+  .filter((e) => e.isDirectory())
+  .map((e) => e.name);
 
 async function safeSymlink(target, path) {
   try {
