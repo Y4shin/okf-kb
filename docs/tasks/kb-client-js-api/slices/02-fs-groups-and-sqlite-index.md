@@ -6,7 +6,8 @@ task: ../task.md
 mode: afk
 status: done
 size: xl
-blocked_by: [core-types-and-builder]
+blocked_by:
+- core-types-and-builder
 ---
 
 ## End-to-end behavior

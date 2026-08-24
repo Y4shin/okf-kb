@@ -26,9 +26,6 @@ import {
   ResolveIdInputSchema,
   DirForInputSchema,
   PathForInputSchema,
-  CheckInputSchema,
-  BuildIndexInputSchema,
-  RebuildIndexesInputSchema,
 } from '@kb/core';
 
 // ============================================================

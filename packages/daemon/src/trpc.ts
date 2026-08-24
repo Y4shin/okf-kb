@@ -25,7 +25,7 @@ export function createTrpcHandler(kb: Kb<AllGroups>, token: string) {
   return createHTTPHandler({
     router,
     basePath: '/trpc/',
-    createContext: async ({ req }: { req: IncomingMessage; res: ServerResponse }) => {
+    createContext: async ({ req }: { req: any; res: any }) => {
       if (!checkBearer(req, token)) {
         throw new AuthError('Unauthorized');
       }
