@@ -4,7 +4,7 @@ type: feature
 slug: kb-client-js-api
 title: KB daemon + core library + CLI (tRPC/MCP) — the agent-agnostic surface
 map: agent-knowledge-base
-status: ready
+status: done
 blocked_by:
 - research-sb-filesystem-and-plugs
 - okf-format-adaptation
@@ -142,3 +142,54 @@ can't slip past a consumer) is enforced by `tsc` on the binding records.
   notes for the full list of deviations (MCP raw Zod schemas to
   `registerTool`, `mcpServerFromBindings` internal, builder not used at
   runtime, MCP stateless mode).
+- **Slice 04 (cli-client) is done — task complete (all 4 slices).** The
+  **`@kb/cli`** package is a thin tRPC client: `createTrpcClient` builds a
+  typed `createTRPCProxyClient<AppRouter>` (Bearer header from keyring/env),
+  and `runCli` pre-parses global opts then dispatches — commands are generated
+  from `fullBindings` via `registerAllCommands` → a `registerBindingCommand`
+  loop over `flattenBindings`. `kb daemon` runs `@kb/daemon`'s `startDaemon`;
+  `kb config` is special-cased. See slice 04's notes for deviations (kebab
+  `group.method` command names vs short aliases; `.kb/config` not read;
+  hand-written per-command flags for 4 methods; package.json `main`/`exports`
+  fixed to `./dist/src/index.js`).
+
+### Task summary (all 4 slices)
+
+The **kb-client-js-api** task delivers the agent-agnostic KB surface as an
+npm-workspace monorepo, **daemon-mediated in V1** (the daemon owns `.kb/`;
+CLI/pi/MCP are clients over localhost HTTP):
+
+- **`@kb/core`** — Zod-verified types (`Ref`/`Actor`/`Rule`/`Frontmatter`/
+  …, `z.infer`-derived, `.meta()` tags), `parseRef`/`formatRef`/
+  `parseActor`/`formatActor`, the typestate builder
+  (`createKb(common).usingX().declare().withX().build()`), the group
+  interfaces (`LocalFs`/`Read`/`Search`/`Write`/`IndexAdmin`) with `RefInput`
+  params, per-method `*InputSchema` Zod schemas, and the **`GroupBindings<G>`**
+  mapped type that enforces exhaustiveness.
+- **`@kb/fs`** — the 5 `Fs*` group classes constructed from `CommonDeps`.
+  Storage is **better-sqlite3 + JSON-blob** with **JS cosine** vector search
+  (sqlite-vec was dropped for portability; vectors stored as JSON, similarity
+  computed in JS). `FTS5` for literal search. **RRF k=60** blends the three
+  (semantic + literal + graph-context) rankings; graph is a mode + optional
+  `withGraph` context, not a rank signal. `B7=error` (orphaned glossary
+  term) is enforced by `check`.
+- **`@kb/protocol`** — `fullBindings` + `piBindings` (pi omits `Write`),
+  `buildRouter(kb)` (runtime `initTRPC` router factory from the binding
+  records), and the `AppRouter` type. **One IDL → two projections**: the
+  Zod input schemas + `GroupBindings<G>` feed both the tRPC router and the
+  MCP emitter; `keyof Group` exhaustiveness propagates to clients (tRPC
+  infers; MCP regenerates).
+- **`@kb/daemon`** — serves **tRPC `/trpc`** (router built from the binding
+  records) and **MCP `/mcp`** (each binding → a tool), localhost-only
+  (`127.0.0.1`), **Bearer auth** (token from `@napi-rs/keyring`, `KB_TOKEN`
+  env fallback).
+- **`@kb/cli`** — tRPC client (`createTrpcClient`), commands generated from
+  the binding records, and `kb daemon` to run the daemon.
+
+**Quality:** 90 tests pass + 1 skipped (opt-in embedder integration),
+**`tsc --strict` clean** across all packages. The exhaustiveness guarantee
+(a new method can't slip past a consumer — a forgotten binding or schema drift
+is a `tsc` error) is enforced by `GroupBindings<G>` + `tsc --strict` in CI, no
+codegen for wrappers (they loop the records). **pi is the next consumer** —
+`piBindings` deliberately omits the `Write` group (pi authors via the skill,
+the library validates).

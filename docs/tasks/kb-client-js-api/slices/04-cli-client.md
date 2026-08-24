@@ -4,7 +4,7 @@ slug: cli-client
 title: CLI — tRPC client; commands generated from binding records + .meta({cli})
 task: ../task.md
 mode: afk
-status: todo
+status: done
 size: m
 blocked_by: [daemon-trpc-and-mcp]
 ---
@@ -62,3 +62,49 @@ the type-check keeps them in sync. The CLI also runs the daemon
 - The CLI is a *client* — no direct `@kb/fs` import in V1.
 - One config source: `KB_HOME`, `KB_TOKEN` (env), `.kb/config`; precedence
   env > config > default.
+
+## Implementation notes
+
+**`@kb/cli` implemented** — `runCli` (argv pre-parser + dispatcher) +
+`createTrpcClient` (`createTRPCProxyClient<AppRouter>` with `httpBatchLink` to
+`<url>/trpc` + Bearer auth header) + `AppRouter` type (type-only import from
+`@kb/protocol`) + `bin/kb.js` (`#!/usr/bin/env node` importing compiled
+`dist/src/index.js`). Commands are generated from `fullBindings` via
+`registerAllCommands` → a `registerBindingCommand` loop over
+`flattenBindings(fullBindings)`, producing one commander subcommand per
+binding. `kb daemon` calls `@kb/daemon`'s `startDaemon`; `kb config` is
+special-cased to a config printer. `--json` output mode, `--help` per command
+(from `.meta({cli})`), and sensible exit codes (`check` `ok:false` → non-0).
+90 tests pass + 1 skipped, including a built-bin `child_process.spawn`
+end-to-end round-trip (`write.put` + `read.get`).
+
+**Deviations from the acceptance criteria examples:**
+
+- (a) Commands are **fully-qualified `group.method` kebab-cased** (`kb
+  read.get`, `kb write.put`, `kb search.search-unified`, `kb index-admin.check`)
+  — NOT the short aliases shown in the acceptance examples (`kb get`, `kb put`,
+  `kb search`, `kb check`). This is deliberate: the commands are mechanically
+  generated from the `fullBindings` records (`group.method`), and a `toKebab()`
+  conversion normalizes both group and method parts. The tRPC client still uses
+  the original camelCase group/method names to call procedures.
+- (b) The registration export is **`registerBindingCommand` /
+  `registerAllCommands`**, not the `registerCli` named in the criteria. Same
+  generation-from-records intent; different export name.
+- (c) **`.kb/config` is not read** — only `KB_HOME` / `KB_TOKEN` / `KB_URL` env
+  vars are consulted. `meta.cli.env` is typed but not wired at runtime.
+- (d) **Fixed:** `package.json` `main`/`exports` now point at
+  `./dist/src/index.js` (the build emits `dist/src/`); a programmatic
+  `import '@kb/cli'` resolves correctly. The `kb` binary imports
+  `../dist/src/index.js` directly and already worked.
+- (e) Per-command flag special-casing (`opts`/`content`/`k`) is **hand-written
+  for 4 methods** (`write.put` `--file`/`--content`, `search.searchUnified`
+  `--with-graph`, `search.searchText` `--fields`, `search.searchSemantic
+  `--k`). The generation loop covers command *existence*; the nested-opts flags
+  are pragmatic hand-written special-cases on top of it.
+
+**Other notes:** global options (`--url`/`--token`/`--json`) are pre-parsed and
+stripped from argv before commander sees them (so they work before or after the
+subcommand); commander uses `exitOverride()` to throw `CommanderError` instead
+of `process.exit()` (vitest-friendly); `getOrMintToken` mints a random in-memory
+token in headless CI when `--token` is absent. No `@kb/fs` import in CLI source
+(only `FakeEmbedder` in tests).
