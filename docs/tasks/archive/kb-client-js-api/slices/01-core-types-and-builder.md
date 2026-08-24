@@ -4,7 +4,7 @@ slug: core-types-and-builder
 title: "@kb/core — Zod-verified types, typestate builder, group interfaces, binding records"
 task: ../task.md
 mode: afk
-status: todo
+status: done
 size: l
 blocked_by: []
 ---
@@ -73,3 +73,27 @@ hints. Verified under `tsc --strict`.
 - Verified under `tsc --strict` on TS 5.9 + Zod 4.4 (the reference shape in
   `/tmp` is a proven skeleton; port to the monorepo).
 - The exact type/predicate vocab comes from `okf-format-adaptation` (done).
+
+## Implementation notes
+
+`@kb/core` was ported from the verified `/tmp` prototype skeleton into the
+monorepo (`packages/core/`) under `tsc --strict`. Key decisions carried over:
+
+- **Single-input-object params** (per the decide-task enforcement section):
+each group method takes one `{...}` object rather than positional args, so
+the `GroupBindings<G>` mapped type can enforce consumer/daemon exhaustiveness
+— a forgotten method or schema drift (`_output` mismatch) surfaces as a
+`tsc` error in `tests/negatives.test-d.ts`.
+- **`make*` stubs throw on call, not construction**: the builder's `withX`
+methods and the `make*` factory helpers return group instances whose stubbed
+methods throw only when invoked, so the typestate shape is testable without
+wiring real `@kb/fs` implementations.
+- **16 tests + negatives gate green**: `vitest` reports 16/16 passing;
+`typecheck:negatives` (the `tsc` run over `tests/negatives.test-d.ts`)
+exits 0, proving the expected-to-fail type errors are present.
+- **Build artifacts gitignored**: `dist/` and `*.tsbuildinfo` are in
+`.gitignore`; only source + tests are committed.
+
+See `docs/tasks/kb-client-js-api/.work/verify-s1.md` for the full green-run
+transcript and `docs/tasks/kb-client-js-api/deviation-reports/core-types-and-builder.md`
+for deviations from the original plan.

@@ -6,6 +6,11 @@ node_modules/
 dist/
 build/
 *.tsbuildinfo
+# compiled test artifacts (tsc --build output under tests/)
+packages/*/tests/**/*.js
+packages/*/tests/**/*.d.ts
+!packages/*/tests/**/*.test.ts
+!packages/*/tests/**/*.test-d.ts
 
 # Environment / secrets (never commit tokens)
 .env

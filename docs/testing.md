@@ -2,45 +2,54 @@
 
 ## Framework
 
-- **Vitest** (planned) for the TS packages (`@kb/core`, `@kb/fs`, daemon,
-  CLI) — matches the Node/TS toolchain.
-- **`tsc --strict`** is the *enforcement* layer for the binding-record
-  exhaustiveness guarantee (a forgotten method / schema drift → compile
-  error) — run in CI, not just locally.
+- **Vitest** for the TS packages (`@kb/core`, `@kb/fs`, `@kb/protocol`,
+  `@kb/daemon`, `@kb/cli`) — matches the Node/TS toolchain. 90 tests pass
+  + 1 skipped (opt-in `TransformersEmbedder` integration test, skipped
+  unless the model is cached / an env flag is set).
+- **`tsc --strict`** (`npm run typecheck` = `tsc --build`) is the
+  *enforcement* layer for the binding-record exhaustiveness guarantee
+  (a forgotten method / schema drift → compile error) — run in CI, not
+  just locally.
 
 ## Run commands
 
 ```sh
-npm test                       # full suite
-npm run test:watch             # watch mode
+npm test                       # full suite (vitest run)
+npm run test:watch             # watch mode (vitest)
 npm run test -- <path>         # single file
-npm run typecheck              # tsc --noEmit --strict across the workspace
+npm run typecheck              # tsc --build across the workspace (the gate)
+npm run build                  # tsc --build (emit)
 ```
-
-(Exact scripts to be set in the workspace root `package.json` when the
-monorepo is scaffolded.)
 
 ## Mock conventions
 
 - **`@kb/core`**: pure — test with no mocks; Zod `parse`/`transform` and the
-  typestate builder are exercised directly. The verified prototype in
-  `docs/tasks/kb-client-js-api/reference/` is the starting point (re-verify
-  with `tsc`).
-- **`@kb/fs`**: use a tmp bundle dir + a fake/real embedder; `sqlite-vec`
-  in a tmp `.kb/index.db`. Avoid touching the real `$KB_HOME`.
-- **daemon**: tRPC + MCP over an ephemeral localhost port; a fake token
-  (env) for tests; assert Bearer auth (401 on missing/bad token).
-- **CLI**: a tRPC client against a test-running daemon; assert `--json`
-  output is parseable.
-- **Fixtures**: small OKF bundles (a few `concept`/`term`/`decision`
-  notes with typed `relations`) under `tests/fixtures/`.
+  typestate builder are exercised directly. A `tests/negatives.test-d.ts`
+  proves the gates fire via `@ts-expect-error` (run by
+  `packages/core/tests/strictness.test.ts` via the `typecheck:negatives`
+  script). `GroupBindings` exhaustiveness + schema-drift negatives are in
+  the same file.
+- **`@kb/fs`**: a tmp bundle dir + `FakeEmbedder` (deterministic hash →
+  fixed-dim vector, no model download) + a tmp `.kb/index.db`. Never touch
+  the real `$KB_HOME`. Fixtures (minimal / orphaned-glossary / dead-relation
+  bundles) are generated in `beforeAll` inside the test files.
+- **`@kb/protocol`**: the records + router factory; `fullBindings` is typed
+  `satisfies FullBindings` so a missing method fails `tsc`.
+- **daemon**: tRPC + MCP over an ephemeral localhost port (port 0); a fake
+  token (env) for tests; `FakeEmbedder` injected via `buildCommonDeps`;
+  assert Bearer auth (401 on missing/bad token on both `/trpc` and `/mcp`).
+- **CLI**: `runCli` called in-process with a stubbed argv + stdout capture
+  (fast), plus ONE built-bin end-to-end test that spawns `node bin/kb.js`
+  via `child_process` (proves the binary works); asserts `--json` output is
+  parseable. The CLI test imports `FakeEmbedder` from `@kb/fs` to stand up a
+  daemon (test-only, not a CLI-runtime dep).
 
 ## Coverage
 
-Target gate per-package (e.g. `npm run test:coverage`); the
-`core-types-and-builder` slice should be near-100% (pure logic). The
-`fs-groups-and-sqlite-index` slice is the heaviest (sqlite-vec, embedder,
-chunking, RRF) — prioritize integration tests there.
+`@kb/core` is near-100% (pure logic). `@kb/fs` is integration-heavy
+(better-sqlite3 + embedder + chunking + RRF + check) — the bulk of the
+suite. The `TransformersEmbedder` integration test is opt-in (skipped
+without a model cache / env flag) so the suite runs hermetically.
 
 ## What `tsc` enforces (not a test, a compile gate)
 
@@ -49,4 +58,18 @@ chunking, RRF) — prioritize integration tests there.
   every consumer's binding record fail to compile until bound or `EXCLUDED`.
 - **Schema drift**: the binding's `inputSchema` output must equal the
   method's param; rename a field → `_output … Property 'x' is missing`.
-- Run `tsc --strict` in CI so neither slips through.
+- **No-arg methods**: the core no-arg schemas are `z.void()`, but
+  `MethodBinding<() => …>` requires the schema output to equal
+  `Parameters[0]` = `undefined` (not `void`), so the no-arg binding records
+  use `z.undefined()` (the core `z.void()` schemas can't satisfy
+  `GroupBindings` for no-arg methods — they're not imported by the records).
+- Run `tsc --strict` in CI so none of these slip through.
+
+## Reproduction
+
+AI reproduction is feasible for all code slices (pure TS + `tsc --strict`
++ vitest, `FakeEmbedder` keeps it hermetic). The SB-facing end-to-end
+("note appears in the SB UI") needs the Docker test fixture
+(`docs/tasks/stand-up-silverbullet/`) — verified manually; the CLI's
+`write.put` → disk path is tested, and `SB_FS_WATCH=auto` pickup was
+confirmed in the stand-up task.
