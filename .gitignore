@@ -1,0 +1,28 @@
+# KB index + config (the daemon's state — not KB content; gitignored per the deployment decision)
+.kb/
+
+# Node / npm workspace
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# Environment / secrets (never commit tokens)
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+
+# Test artifacts
+coverage/
+.nyc_output/
