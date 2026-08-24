@@ -5,8 +5,7 @@ slug: remote-daemon-conditional-write
 title: Remote-agent daemon access — conditional Write/Read tools when KB_URL is non-localhost
 map: agent-knowledge-base
 status: ready
-blocked_by:
-  - pi-adapter-skill-and-tools
+blocked_by: []
 ---
 
 ## User-visible outcome

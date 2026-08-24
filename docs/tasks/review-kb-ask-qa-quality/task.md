@@ -5,8 +5,7 @@ slug: review-kb-ask-qa-quality
 title: Human review of kb-ask answer/citation quality (hitl gate for the pi adapter)
 map: agent-knowledge-base
 status: ready
-blocked_by:
-  - pi-adapter-skill-and-tools
+blocked_by: []
 ---
 
 ## Exact prerequisite
