@@ -9,7 +9,7 @@
 import { Type, type Static } from 'typebox';
 import { StringEnum } from '@earendil-works/pi-ai';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
-import { piBindings, flattenBindings, type PiAppRouter } from '@kb/protocol';
+import { piBindings, flattenBindings } from '@kb/protocol';
 import type { FlatBinding } from '@kb/protocol';
 
 // ============================================================
@@ -116,11 +116,11 @@ for (const spec of TOOL_SPECS) {
  * @param pi     The pi ExtensionAPI.
  * @param client The tRPC proxy client (typed PiAppRouter — no write group).
  */
-export function registerKbTools(pi: ExtensionAPI, client: PiAppRouterClient): void {
+export function registerKbTools(pi: ExtensionAPI, client: KbClient): void {
   for (const spec of TOOL_SPECS) {
     const binding = _bindingByName.get(spec.qualifiedName)!;
     const isQuery = binding.isQuery;
-    const [group, method] = spec.qualifiedName.split('.') as [keyof PiAppRouter, string];
+    const [group, method] = spec.qualifiedName.split('.') as [string, string];
 
     pi.registerTool({
       name: spec.name,
@@ -158,4 +158,11 @@ export function registerKbTools(pi: ExtensionAPI, client: PiAppRouterClient): vo
 }
 
 /** The tRPC proxy client type (re-exported for the index). */
-export type PiAppRouterClient = ReturnType<typeof import('./client.js').createKbTrpcClient>;
+export type KbClient = {
+  [group: string]: {
+    [method: string]: {
+      query: (input: unknown) => Promise<unknown>;
+      mutate: (input: unknown) => Promise<unknown>;
+    };
+  };
+};

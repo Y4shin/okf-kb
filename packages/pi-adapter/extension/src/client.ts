@@ -3,15 +3,9 @@
 // pi authors with native write/edit; the client type simply doesn't expose Write.
 
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '@kb/protocol';
+import type { PiAppRouter } from '@kb/protocol';
 
-/**
- * The pi-facing tRPC router type: the daemon's full AppRouter with the
- * 'write' group omitted. pi authors with native write/edit then calls
- * kb_update to reindex. This is a compile-time guarantee — client.write is
- * absent from the type, so pi can't call put/delete through the client.
- */
-export type PiAppRouter = Omit<AppRouter, 'write'>;
+export type { PiAppRouter } from '@kb/protocol';
 
 /**
  * Build a tRPC proxy client for the KB daemon.
@@ -24,7 +18,7 @@ export function createKbTrpcClient(url: string, token: string) {
       httpBatchLink({
         url: `${url}/trpc`,
         headers: () => ({ authorization: `Bearer ${token}` }),
-      }),
+      } as never),
     ],
   });
 }

@@ -13,7 +13,7 @@ import { startDaemon, type DaemonHandle } from '@kb/daemon';
 import { testManifest, note } from '../../fs/tests/helpers.js';
 import { createKbTrpcClient } from '../extension/src/client.js';
 import { registerKbTools } from '../extension/src/tools.js';
-import { piBindings, flattenBindings, type PiAppRouter } from '@kb/protocol';
+import { piBindings, flattenBindings } from '@kb/protocol';
 import type { ExtensionAPI, ToolDefinition } from '@earendil-works/pi-coding-agent';
 
 let handle: DaemonHandle;
