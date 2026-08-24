@@ -12,30 +12,30 @@ import type { NoteView, SearchHit, ListEntry, PutResult, DeleteResult, CheckRepo
 // ============================================================
 
 export interface LocalFs {
-  resolvePath(ref: RefInput): { path: string };
-  resolveId(ref: RefInput): { slug: Slug; ty: Type };
-  dirFor(type: Type): { path: string };
-  pathFor(type: Type, slug: Slug): { path: string };
+  resolvePath(input: { ref: RefInput }): { path: string };
+  resolveId(input: { ref: RefInput }): { slug: Slug; ty: Type };
+  dirFor(input: { type: Type }): { path: string };
+  pathFor(input: { type: Type; slug: Slug }): { path: string };
   spaceRoot(): { path: string };
 }
 
 export interface Read {
-  get(ref: RefInput): Promise<NoteView>;
-  list(opts?: { type?: Type; tag?: Tag; status?: string; by?: ActorInput }): AsyncIterable<ListEntry>;
+  get(input: { ref: RefInput }): Promise<NoteView>;
+  list(input?: { type?: Type; tag?: Tag; status?: string; by?: ActorInput }): AsyncIterable<ListEntry>;
 }
 
 export interface Search {
-  searchText(q: string, opts?: { fields?: string[] }): Promise<SearchHit[]>;
-  searchSemantic(q: string, k?: number): Promise<SearchHit[]>;
-  searchUnified(q: string, opts?: { withGraph?: boolean }): Promise<SearchHit[]>;
-  graph(ref: RefInput, dir: 'ancestors' | 'descendants' | 'neighbors'): Promise<Ref[]>;
-  update(ref: RefInput, content: string): Promise<void>;
-  checkId(ref: RefInput): Promise<CheckReport>;
+  searchText(input: { q: string; opts?: { fields?: string[] } }): Promise<SearchHit[]>;
+  searchSemantic(input: { q: string; k?: number }): Promise<SearchHit[]>;
+  searchUnified(input: { q: string; opts?: { withGraph?: boolean } }): Promise<SearchHit[]>;
+  graph(input: { ref: RefInput; dir: 'ancestors' | 'descendants' | 'neighbors' }): Promise<Ref[]>;
+  update(input: { ref: RefInput; content: string }): Promise<void>;
+  checkId(input: { ref: RefInput }): Promise<CheckReport>;
 }
 
 export interface Write {
-  put(ref: RefInput, content: string): Promise<PutResult>;
-  delete(ref: RefInput): Promise<DeleteResult>;
+  put(input: { ref: RefInput; content: string }): Promise<PutResult>;
+  delete(input: { ref: RefInput }): Promise<DeleteResult>;
 }
 
 export interface IndexAdmin {
