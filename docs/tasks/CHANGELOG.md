@@ -55,3 +55,19 @@ on `127.0.0.1` + a caddy/nginx TLS reverse proxy (`docs/remote-deployment.md`
 with systemd + caddyfile snippets, threat model, governance). 217 tests +
 1 skipped, `tsc --strict` clean. Backwards compatible. Graduates the map's
 "multi-agent adoption / remote deployment" Fog item.
+
+## 2026-08-24 — Map complete: agent-knowledge-base
+
+The `agent-knowledge-base` map is **done**: all 13 child tasks complete.
+An agent (pi) can create, read, link, and search KB notes end-to-end; a
+human can browse/search the same notes in Silverbullet; conversational
+Q&A (`kb-ask`) returns cited answers; the agent autonomously expands the
+KB on demand (`kb-curate`/`kb-save-session`/`kb-research`); and a remote
+agent can author through a TLS-fronted daemon. Delivered: `@kb/core`+
+`@kb/fs`+`@kb/protocol`+`@kb/daemon`+`@kb/cli` (the agent-agnostic JS API/
+CLI/daemon, tRPC + MCP, 217 tests), the pi adapter (8 KB tools + the
+`kb-ask`/`kb-curate`/`kb-save-session`/`kb-research` skills), a local
+Silverbullet fixture, a remote-deployment guide, and the global KB at
+`$KB_HOME`. Fog items deferred: scheduled background expansion, SB-embedded
+search, pi rendered inside SB, braindump capture, local in-code-repo KBs,
+V2 optional daemon. Map archived.

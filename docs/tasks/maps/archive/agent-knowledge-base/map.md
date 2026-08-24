@@ -2,7 +2,7 @@
 kind: map
 slug: agent-knowledge-base
 title: Agent-maintained Silverbullet knowledge base
-status: active
+status: done
 tasks:
   - research-sb-filesystem-and-plugs
   - okf-format-adaptation
