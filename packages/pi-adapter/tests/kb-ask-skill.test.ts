@@ -64,12 +64,12 @@ describe('kb-ask skill: RAG steps present and ordered', () => {
     expect(/k\s*[≈=]\s*8|top.?8|k\s*≈\s*8/i.test(text)).toBe(true);
   });
 
-  it('has a lifecycle-filter step: exclude deprecated, flag stale_after, include draft/unverified with marker', () => {
+  it('has a lifecycle-filter step: drop/exclude deprecated, flag stale_after, include draft/unverified with marker', () => {
     expect(steps.lifecycleFilter).toBeGreaterThanOrEqual(0);
     const lc = text.toLowerCase();
-    // Exclude deprecated
+    // Deprecated notes are dropped/excluded (not cited, not paraphrased, not flagged inline)
     expect(lc).toContain('deprecated');
-    expect(lc).toMatch(/exclude.*deprecated|deprecated.*exclude/);
+    expect(lc).toMatch(/(drop|exclude).*deprecated|deprecated.*(drop|exclude)/);
     // Flag stale_after
     expect(lc).toContain('stale_after');
     expect(lc).toMatch(/flag.*stale|stale.*flag|past.*freshness|freshness.*date/);
@@ -125,7 +125,9 @@ describe('kb-ask skill: RAG steps present and ordered', () => {
     // Use the step headings (## Step N — <name>) for ordering, since intro
     // text may mention concepts out of order. The headings are the canonical
     // sequence markers.
-    const headingIdx = (n: number): number => text.indexOf(`Step ${n} `);
+    // Match the ## Step N heading line (not body mentions of "Step N" like
+    // "proceed to Step 7" inside Step 2).
+    const headingIdx = (n: number): number => text.indexOf(`## Step ${n} `);
     const order = [
       { name: 'retrieve', idx: headingIdx(1) },
       { name: 'lifecycle', idx: headingIdx(2) },

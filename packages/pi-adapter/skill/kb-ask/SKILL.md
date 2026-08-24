@@ -41,20 +41,26 @@ kb_search({ q: <the user's question>, opts: { withGraph: true } })
   `tag`, `status`, or `by` (author) when the user asks for a listing rather
   than a semantic search.
 
-## Step 2 — Lifecycle Filter (document-level)
+## Step 2 — Lifecycle Filter (document-level, MANDATORY)
 
 For each retrieved hit, fetch its frontmatter via `kb_get({ ref })` (which
 returns a `NoteView` with `frontmatter`). Apply these document-level
-lifecycle filters:
+lifecycle filters **before** assembling context or answering — this is
+non-negotiable:
 
-- **Exclude** any note with `status: deprecated` — do not use it in the
-  answer at all.
-- **Flag** any note whose `stale_after` date is in the past — include it
-  but mark the answer "[stale: past its freshness date]" near the
-  relevant claim.
-- **Include** notes with `status: draft` or trust level `unverified` —
-  include them but mark inline with `[draft]` or `[unverified]` near the
-  relevant claim.
+- **`status: deprecated` → DROP the hit entirely.** Do not include its text
+  in the context, do not cite it, do not paraphrase it, and do not flag it
+  inline. Act as if the note does not exist for this question. (If a
+  question is *about* a deprecated thing, answer from a non-deprecated
+  note that *describes* the deprecation, e.g. a `decision` note — never
+  from the deprecated note itself.) If the deprecated note was the only
+  hit, proceed to Step 7 ("I don't know").
+- **`stale_after` in the past → include with a flag.** Include the note
+  but mark the answer `[stale: past its freshness date]` near the relevant
+  claim.
+- **`status: draft` or trust `unverified` → include with a marker.** Include
+  them but mark inline with `[draft]` or `[unverified]` near the relevant
+  claim.
 
 The lifecycle is on the frontmatter (the document), not sections within a
 note. We don't deprecate individual sections.
@@ -124,7 +130,8 @@ Refuse to answer (say "I don't know") when:
   `score` field on each `SearchHit` is the RRF-blended score; if none
   is above the floor, refuse.
 - **Zero hits remain after lifecycle filtering** — if every hit was
-  `deprecated` or filtered out, refuse.
+  `deprecated` (dropped per Step 2) or otherwise filtered out, refuse. A
+  deprecated note is **not** evidence and must not be cited or paraphrased.
 
 When you refuse, **name what was tried** — state the query you searched
 and the filters you applied (e.g., "I searched for 'X' with withGraph;
