@@ -69,13 +69,24 @@ export function buildRouter(kb: Kb<AllGroups>) {
   for (const fb of flat) {
     const groupObj = (kb as unknown as Record<string, Record<string, (i: unknown) => unknown>>)[fb.group];
     const methodFn = groupObj[fb.method];
+    // Materialize async-iterable results (read.list returns AsyncIterable) to
+    // arrays so tRPC can serialize them over httpBatchLink.
+    const call = async (input: unknown) => {
+      const res = await methodFn.call(groupObj, input);
+      if (res && typeof (res as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+        const out: unknown[] = [];
+        for await (const item of res as AsyncIterable<unknown>) out.push(item);
+        return out;
+      }
+      return res;
+    };
     const proc = fb.isQuery
       ? t.procedure
           .input(fb.inputSchema as never)
-          .query(({ input }) => methodFn.call(groupObj, input))
+          .query(({ input }) => call(input))
       : t.procedure
           .input(fb.inputSchema as never)
-          .mutation(({ input }) => methodFn.call(groupObj, input));
+          .mutation(({ input }) => call(input));
     (groupProcedures[fb.group] ??= {})[fb.method] = proc;
   }
 
