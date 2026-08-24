@@ -44,11 +44,18 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Daemon
   const token = opts.token ?? getOrMintToken();
   const port = opts.port ?? (process.env.KB_PORT ? parseInt(process.env.KB_PORT, 10) : 30700);
   const host = opts.host ?? process.env.KB_DAEMON_HOST ?? '127.0.0.1';
+  // Direct TLS (secondary path — recommended: keep the daemon on 127.0.0.1 behind a TLS reverse proxy).
+  // opts.tls wins; else fall back to KB_DAEMON_TLS_CERT + KB_DAEMON_TLS_KEY env (file paths).
+  const tls = opts.tls ?? (
+    process.env.KB_DAEMON_TLS_CERT && process.env.KB_DAEMON_TLS_KEY
+      ? { cert: process.env.KB_DAEMON_TLS_CERT, key: process.env.KB_DAEMON_TLS_KEY }
+      : undefined
+  );
 
   // Non-localhost safety gate (string check — NOT DNS resolution).
   // A hostname that resolves to loopback is still treated as non-local (safe over-permissive).
   const isLocal = ['127.0.0.1', 'localhost', '::1'].includes(host);
-  if (!isLocal && !opts.tls && process.env.KB_ALLOW_REMOTE_INSECURE !== '1') {
+  if (!isLocal && !tls && process.env.KB_ALLOW_REMOTE_INSECURE !== '1') {
     throw new Error(
       `Refusing to bind non-localhost (${host}) without TLS. Either:\n` +
       '  (recommended) keep the daemon on 127.0.0.1 and put a TLS reverse proxy (caddy/nginx) on 0.0.0.0, OR\n' +
@@ -56,7 +63,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Daemon
       '  set KB_ALLOW_REMOTE_INSECURE=1 to bypass (NOT recommended — the token is sniffable).',
     );
   }
-  if (!isLocal && !opts.tls && process.env.KB_ALLOW_REMOTE_INSECURE === '1') {
+  if (!isLocal && !tls && process.env.KB_ALLOW_REMOTE_INSECURE === '1') {
     process.stderr.write(
       'WARNING: remote daemon without TLS — the Bearer token is sniffable on the network. ' +
       'Use a TLS reverse proxy or KB_DAEMON_TLS_*.\n',
@@ -92,10 +99,10 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Daemon
   // Capabilities groups — derived from fullBindings keys so it can't drift.
   const groups = Object.keys(fullBindings);
 
-  // HTTP server (plain HTTP, or HTTPS if opts.tls is set — secondary path).
-  const createServer = opts.tls
+  // HTTP server (plain HTTP, or HTTPS if `tls` is set — secondary path).
+  const createServer = tls
     ? () => createHttpsServer(
-        { cert: readFileSync(opts.tls!.cert), key: readFileSync(opts.tls!.key) },
+        { cert: readFileSync(tls.cert), key: readFileSync(tls.key) },
         requestHandler,
       )
     : () => createHttpServer(requestHandler);
@@ -169,7 +176,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Daemon
     server.listen(port, host, () => {
       const addr = server.address();
       const actualPort = typeof addr === 'object' && addr ? addr.port : port;
-      const scheme = opts.tls ? 'https' : 'http';
+      const scheme = tls ? 'https' : 'http';
       const actualUrl = `${scheme}://${host}:${actualPort}`;
       resolve({
         url: actualUrl,

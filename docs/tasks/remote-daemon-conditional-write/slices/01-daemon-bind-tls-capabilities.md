@@ -34,8 +34,12 @@ has all; the *client* decides what to use based on locality).
   logs a prominent warning ("remote daemon without TLS — token is
   sniffable on the network; use a reverse proxy or set TLS certs").
 - Optional daemon TLS: if `KB_DAEMON_TLS_CERT` + `KB_DAEMON_TLS_KEY` are
-  set, the server listens with TLS (`https.createServer`). (Reverse-proxy
-  TLS is the recommended path; this is the opt-in alternative.)
+  set, the server listens with TLS (`https.createServer`). **This is the
+  secondary path** — the recommended remote deployment keeps the daemon
+  bound to `127.0.0.1` and puts a reverse proxy (caddy/nginx) on `0.0.0.0`
+  with TLS in front of it (the proxy terminates TLS and forwards to the
+  localhost daemon). The direct daemon-TLS mode exists for operators who
+  can't run a proxy; both satisfy the non-localhost-TLS gate.
 - A capabilities surface: `GET /` returns JSON
   `{ ok, service, version, groups: ['read','search','write','localFs','indexAdmin'] }`
   (extend the existing health endpoint), AND/OR a tRPC
