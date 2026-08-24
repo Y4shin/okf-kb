@@ -252,9 +252,13 @@ describe('kb-research skill: no code / no daemon imports', () => {
     expect(lc).not.toContain('import "@kb/protocol');
   });
 
-  it('does NOT reference kb_put or kb_delete (not registered)', () => {
+  it('references kb_put and kb_delete in the remote KB note (slice 3: when the KB is remote, author with kb_put/kb_delete)', () => {
+    // Slice 3 adds a one-line note near the synthesize step.
     const lc = text.toLowerCase();
-    expect(lc).not.toMatch(/kb_put|kb_delete/);
+    expect(lc).toMatch(/kb_put/);
+    expect(lc).toMatch(/kb_delete/);
+    expect(lc).toMatch(/remote/);
+    expect(lc).toMatch(/isremotekb/);
   });
 });
 
