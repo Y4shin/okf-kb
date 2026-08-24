@@ -35,8 +35,15 @@ describe('getOrMintToken', () => {
     expect(stored).toBe(token);
   });
 
-  it('returns the keyring token when keyring has one (keyring takes priority over env)', () => {
-    process.env.KB_TOKEN = 'env-should-not-win';
+  it('returns KB_TOKEN env when set, even if keyring has one (env takes priority — shared across user/container boundaries)', () => {
+    process.env.KB_TOKEN = 'env-wins-over-keyring';
+    const fakeEntry = { getPassword: () => 'keyring-token', setPassword: () => {} };
+    const token = getOrMintToken({ entry: fakeEntry });
+    expect(token).toBe('env-wins-over-keyring');
+  });
+
+  it('returns the keyring token when KB_TOKEN env is unset (keyring is the fallback)', () => {
+    delete process.env.KB_TOKEN;
     const fakeEntry = { getPassword: () => 'keyring-token', setPassword: () => {} };
     const token = getOrMintToken({ entry: fakeEntry });
     expect(token).toBe('keyring-token');

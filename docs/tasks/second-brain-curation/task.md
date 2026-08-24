@@ -5,10 +5,7 @@ slug: second-brain-curation
 title: Second-brain curation — the agent autonomously expands the KB on demand
 map: agent-knowledge-base
 status: ready
-blocked_by:
-  - pi-adapter-skill-and-tools
-  - okf-format-adaptation
-  - decide-second-brain-governance
+blocked_by: []
 slices:
   - curation-skill
   - session-distill-workflow

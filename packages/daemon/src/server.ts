@@ -14,7 +14,7 @@ import { createTrpcHandler, AuthError, checkBearer } from './trpc.js';
 import { mcpServerFromBindings } from './mcp.js';
 
 export interface StartDaemonOptions extends BuildDepsOptions {
-  /** Port to bind (0 = ephemeral). Default: KB_PORT env or 0. */
+  /** Port to bind (0 = ephemeral). Default: KB_PORT env or 30700. */
   port?: number;
   /** Override the auth token (test seam). Default: getOrMintToken(). */
   token?: string;
@@ -33,7 +33,7 @@ export interface DaemonHandle {
  */
 export async function startDaemon(opts: StartDaemonOptions = {}): Promise<DaemonHandle> {
   const token = opts.token ?? getOrMintToken();
-  const port = opts.port ?? (process.env.KB_PORT ? parseInt(process.env.KB_PORT, 10) : 0);
+  const port = opts.port ?? (process.env.KB_PORT ? parseInt(process.env.KB_PORT, 10) : 30700);
 
   // Build CommonDeps + the real Fs* implementations.
   // The typestate builder (createKb) assembles group *shapes* with stubs that throw;
