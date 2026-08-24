@@ -6,7 +6,8 @@ task: ../task.md
 mode: afk
 status: done
 size: m
-blocked_by: [daemon-trpc-and-mcp]
+blocked_by:
+- daemon-trpc-and-mcp
 ---
 
 ## End-to-end behavior
