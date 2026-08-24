@@ -8,10 +8,12 @@ import { homedir } from 'node:os';
 
 const piAgentDir = join(homedir(), '.pi', 'agent');
 const extSrc = join(process.cwd(), 'extension');
-const skillSrc = join(process.cwd(), 'skill', 'kb-ask');
 
 const extDest = join(piAgentDir, 'extensions', 'pi-kb');
-const skillDest = join(piAgentDir, 'skills', 'kb-ask');
+
+// Each skill in packages/pi-adapter/skill/ gets its own symlink into
+// ~/.pi/agent/skills/<name>. Add new skill dirs here.
+const skills = ['kb-ask', 'kb-curate'];
 
 async function safeSymlink(target, path) {
   try {
@@ -29,5 +31,7 @@ await mkdir(join(piAgentDir, 'skills'), { recursive: true });
 
 console.log('Installing pi extension + skill into ~/.pi/agent/ ...');
 await safeSymlink(extSrc, extDest);
-await safeSymlink(skillSrc, skillDest);
+for (const name of skills) {
+  await safeSymlink(join(process.cwd(), 'skill', name), join(piAgentDir, 'skills', name));
+}
 console.log('Done.');
