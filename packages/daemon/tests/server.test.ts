@@ -1,7 +1,9 @@
 // @kb/daemon — server test: start the daemon on an ephemeral port with a tmp
 // space + FakeEmbedder + minimal manifest; assert health, tRPC read.get after
 // write.put, 401 on missing/bad token, MCP tools/list + tools/call.
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+// Plus: configurable bind host, non-localhost-TLS safety gate, capabilities
+// endpoint, and the KB_ALLOW_REMOTE_INSECURE escape hatch.
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -16,13 +18,18 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 let handle: DaemonHandle;
 let space: string;
 
-beforeAll(async () => {
-  space = await mkdtemp(join(tmpdir(), 'kb-daemon-test-'));
+/** Helper: stand up a tmp space + return it (caller closes the handle). */
+async function makeSpace(): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), 'kb-daemon-test-'));
   for (const entry of Object.values(testManifest.types)) {
-    await mkdir(join(space, entry.dir), { recursive: true });
+    await mkdir(join(dir, entry.dir), { recursive: true });
   }
-  await writeFile(join(space, '.gitkeep'), '');
+  await writeFile(join(dir, '.gitkeep'), '');
+  return dir;
+}
 
+beforeAll(async () => {
+  space = await makeSpace();
   handle = await startDaemon({
     space,
     port: 0, // ephemeral
@@ -35,6 +42,19 @@ beforeAll(async () => {
 afterAll(async () => {
   if (handle) await handle.close();
   if (space) await rm(space, { recursive: true, force: true });
+});
+
+/** Restore env vars we may have touched after each test. */
+const envKeys = ['KB_DAEMON_HOST', 'KB_ALLOW_REMOTE_INSECURE'] as const;
+const savedEnv: Record<string, string | undefined> = {};
+beforeAll(() => {
+  for (const k of envKeys) savedEnv[k] = process.env[k];
+});
+afterEach(() => {
+  for (const k of envKeys) {
+    if (savedEnv[k] === undefined) delete process.env[k];
+    else process.env[k] = savedEnv[k];
+  }
 });
 
 function trpcClient(token?: string) {
@@ -201,5 +221,179 @@ describe('daemon MCP', () => {
       }),
     });
     expect(res.status).toBe(401);
+  });
+});
+
+// ============================================================
+// Slice 1: configurable bind host, non-localhost-TLS safety gate,
+// capabilities endpoint, KB_ALLOW_REMOTE_INSECURE escape hatch.
+// ============================================================
+
+describe('daemon bind host + safety gate', () => {
+  it('startDaemon({ host: 127.0.0.1 }) listens (current behavior, unchanged)', async () => {
+    const dir = await makeSpace();
+    let h: DaemonHandle | undefined;
+    try {
+      h = await startDaemon({
+        space: dir,
+        port: 0,
+        host: '127.0.0.1',
+        token: 'test-token',
+        embedder: new FakeEmbedder(),
+        manifest: testManifest,
+      });
+      expect(h.host).toBe('127.0.0.1');
+      // Prove it actually listens — GET / works.
+      const res = await fetch(`${h.url}/`);
+      expect(res.status).toBe(200);
+    } finally {
+      if (h) await h.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('startDaemon({ host: 0.0.0.0 }) without TLS/escape throws (does not listen)', async () => {
+    const dir = await makeSpace();
+    delete process.env.KB_ALLOW_REMOTE_INSECURE;
+    await expect(startDaemon({
+      space: dir,
+      port: 0,
+      host: '0.0.0.0',
+      token: 'test-token',
+      embedder: new FakeEmbedder(),
+      manifest: testManifest,
+    })).rejects.toThrow(/Refusing to bind non-localhost/);
+    // The error message must name all 3 options.
+    await expect(startDaemon({
+      space: dir,
+      port: 0,
+      host: '0.0.0.0',
+      token: 'test-token',
+      embedder: new FakeEmbedder(),
+      manifest: testManifest,
+    })).rejects.toThrow(/reverse proxy/);
+    await expect(startDaemon({
+      space: dir,
+      port: 0,
+      host: '0.0.0.0',
+      token: 'test-token',
+      embedder: new FakeEmbedder(),
+      manifest: testManifest,
+    })).rejects.toThrow(/KB_DAEMON_TLS/);
+    await expect(startDaemon({
+      space: dir,
+      port: 0,
+      host: '0.0.0.0',
+      token: 'test-token',
+      embedder: new FakeEmbedder(),
+      manifest: testManifest,
+    })).rejects.toThrow(/KB_ALLOW_REMOTE_INSECURE/);
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('startDaemon({ host: 0.0.0.0 }) with KB_ALLOW_REMOTE_INSECURE=1 listens + warns', async () => {
+    const dir = await makeSpace();
+    // Capture stderr writes.
+    const originalWrite = process.stderr.write.bind(process.stderr);
+    let stderrOutput = '';
+    process.stderr.write = ((chunk: string | Uint8Array) => {
+      stderrOutput += chunk.toString();
+      return true;
+    }) as typeof process.stderr.write;
+    process.env.KB_ALLOW_REMOTE_INSECURE = '1';
+    let h: DaemonHandle | undefined;
+    try {
+      h = await startDaemon({
+        space: dir,
+        port: 0,
+        host: '0.0.0.0',
+        token: 'test-token',
+        embedder: new FakeEmbedder(),
+        manifest: testManifest,
+      });
+      expect(h.host).toBe('0.0.0.0');
+      // The warning should have been written to stderr.
+      expect(stderrOutput).toContain('WARNING');
+      expect(stderrOutput).toContain('sniffable');
+    } finally {
+      process.stderr.write = originalWrite;
+      if (h) await h.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('startDaemon({ host: kb.lan }) (a hostname) without TLS/escape throws', async () => {
+    const dir = await makeSpace();
+    delete process.env.KB_ALLOW_REMOTE_INSECURE;
+    await expect(startDaemon({
+      space: dir,
+      port: 0,
+      host: 'kb.lan',
+      token: 'test-token',
+      embedder: new FakeEmbedder(),
+      manifest: testManifest,
+    })).rejects.toThrow(/Refusing to bind non-localhost/);
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('startDaemon({ host: ::1 }) listens (treated as local)', async () => {
+    const dir = await makeSpace();
+    let h: DaemonHandle | undefined;
+    try {
+      h = await startDaemon({
+        space: dir,
+        port: 0,
+        host: '::1',
+        token: 'test-token',
+        embedder: new FakeEmbedder(),
+        manifest: testManifest,
+      });
+      expect(h.host).toBe('::1');
+    } finally {
+      if (h) await h.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('startDaemon({ host: localhost }) listens (treated as local)', async () => {
+    const dir = await makeSpace();
+    let h: DaemonHandle | undefined;
+    try {
+      h = await startDaemon({
+        space: dir,
+        port: 0,
+        host: 'localhost',
+        token: 'test-token',
+        embedder: new FakeEmbedder(),
+        manifest: testManifest,
+      });
+      expect(h.host).toBe('localhost');
+    } finally {
+      if (h) await h.close();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('daemon capabilities endpoint', () => {
+  it('GET / returns capabilities JSON with all 5 groups (not Bearer-gated)', async () => {
+    const res = await fetch(`${handle.url}/`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+    expect(body.service).toBe('kb-daemon');
+    expect(body.version).toBe('0.1.0');
+    expect(body.groups).toBeDefined();
+    expect(Array.isArray(body.groups)).toBe(true);
+    // The exact set of 5 groups (order-independent).
+    expect(new Set(body.groups)).toEqual(
+      new Set(['read', 'search', 'write', 'localFs', 'indexAdmin']),
+    );
+  });
+
+  it('GET / returns 200 without a Bearer token (not gated)', async () => {
+    // No authorization header at all.
+    const res = await fetch(`${handle.url}/`);
+    expect(res.status).toBe(200);
   });
 });

@@ -1,9 +1,12 @@
-// @kb/daemon — server: startDaemon(opts) -> {url, close()}.
+// @kb/daemon — server: startDaemon(opts) -> {url, host, port, token, close()}.
 // Build CommonDeps, build Kb via the typestate builder, build the tRPC router
-// via buildRouter(kb) from @kb/protocol, mount /trpc + /mcp + GET / (health),
-// bind 127.0.0.1 only. Bearer auth on both /trpc and /mcp.
+// via buildRouter(kb) from @kb/protocol, mount /trpc + /mcp + GET / (health +
+// capabilities), bind 127.0.0.1 by default. Bearer auth on both /trpc and /mcp.
+// Non-localhost binds require TLS (or the KB_ALLOW_REMOTE_INSECURE escape hatch).
 
-import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { createServer as createHttpsServer } from 'node:https';
+import { readFileSync } from 'node:fs';
 import { FsLocalFs, FsRead, FsSearch, FsWrite, FsIndexAdmin } from '@kb/fs';
 import type { AllGroups } from '@kb/protocol';
 import { fullBindings } from '@kb/protocol';
@@ -18,22 +21,47 @@ export interface StartDaemonOptions extends BuildDepsOptions {
   port?: number;
   /** Override the auth token (test seam). Default: getOrMintToken(). */
   token?: string;
+  /** Bind host. Default: KB_DAEMON_HOST env or '127.0.0.1'. */
+  host?: string;
+  /** Opt-in direct TLS (secondary path; the recommended path is a reverse proxy). */
+  tls?: { cert: string; key: string };
 }
 
 export interface DaemonHandle {
   url: string;
+  host: string;
   port: number;
   token: string;
   close(): Promise<void>;
 }
 
 /**
- * Start the daemon: build Kb, mount /trpc + /mcp + GET / (health), bind 127.0.0.1.
- * Returns {url, port, token, close()}.
+ * Start the daemon: build Kb, mount /trpc + /mcp + GET / (health + capabilities),
+ * bind the resolved host (default 127.0.0.1). Non-localhost binds require TLS
+ * or the KB_ALLOW_REMOTE_INSECURE escape hatch. Returns {url, host, port, token, close()}.
  */
 export async function startDaemon(opts: StartDaemonOptions = {}): Promise<DaemonHandle> {
   const token = opts.token ?? getOrMintToken();
   const port = opts.port ?? (process.env.KB_PORT ? parseInt(process.env.KB_PORT, 10) : 30700);
+  const host = opts.host ?? process.env.KB_DAEMON_HOST ?? '127.0.0.1';
+
+  // Non-localhost safety gate (string check — NOT DNS resolution).
+  // A hostname that resolves to loopback is still treated as non-local (safe over-permissive).
+  const isLocal = ['127.0.0.1', 'localhost', '::1'].includes(host);
+  if (!isLocal && !opts.tls && process.env.KB_ALLOW_REMOTE_INSECURE !== '1') {
+    throw new Error(
+      `Refusing to bind non-localhost (${host}) without TLS. Either:\n` +
+      '  (recommended) keep the daemon on 127.0.0.1 and put a TLS reverse proxy (caddy/nginx) on 0.0.0.0, OR\n' +
+      '  set KB_DAEMON_TLS_CERT + KB_DAEMON_TLS_KEY for direct TLS, OR\n' +
+      '  set KB_ALLOW_REMOTE_INSECURE=1 to bypass (NOT recommended — the token is sniffable).',
+    );
+  }
+  if (!isLocal && !opts.tls && process.env.KB_ALLOW_REMOTE_INSECURE === '1') {
+    process.stderr.write(
+      'WARNING: remote daemon without TLS — the Bearer token is sniffable on the network. ' +
+      'Use a TLS reverse proxy or KB_DAEMON_TLS_*.\n',
+    );
+  }
 
   // Build CommonDeps + the real Fs* implementations.
   // The typestate builder (createKb) assembles group *shapes* with stubs that throw;
@@ -61,15 +89,27 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Daemon
     return mcpServerFromBindings(realKb as never, fullBindings);
   }
 
-  // HTTP server
-  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+  // Capabilities groups — derived from fullBindings keys so it can't drift.
+  const groups = Object.keys(fullBindings);
+
+  // HTTP server (plain HTTP, or HTTPS if opts.tls is set — secondary path).
+  const createServer = opts.tls
+    ? () => createHttpsServer(
+        { cert: readFileSync(opts.tls!.cert), key: readFileSync(opts.tls!.key) },
+        requestHandler,
+      )
+    : () => createHttpServer(requestHandler);
+  const server = createServer();
+
+  // Request handler (referenced above for both http and https server creation).
+  async function requestHandler(req: IncomingMessage, res: ServerResponse) {
     const url = req.url ?? '/';
 
     try {
       if (url === '/' || url === '/ping' || url === '/.ping') {
-        // Health page
+        // Health + capabilities (NOT Bearer-gated — the groups list is non-sensitive).
         res.writeHead(200, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, service: 'kb-daemon', version: '0.1.0' }));
+        res.end(JSON.stringify({ ok: true, service: 'kb-daemon', version: '0.1.0', groups }));
         return;
       }
 
@@ -122,16 +162,18 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Daemon
         res.end(JSON.stringify({ error: 'Internal server error', message: String(err) }));
       }
     }
-  });
+  }
 
   return new Promise((resolve, reject) => {
     server.on('error', reject);
-    server.listen(port, '127.0.0.1', () => {
+    server.listen(port, host, () => {
       const addr = server.address();
       const actualPort = typeof addr === 'object' && addr ? addr.port : port;
-      const actualUrl = `http://127.0.0.1:${actualPort}`;
+      const scheme = opts.tls ? 'https' : 'http';
+      const actualUrl = `${scheme}://${host}:${actualPort}`;
       resolve({
         url: actualUrl,
+        host,
         port: actualPort,
         token,
         close: async () => {
