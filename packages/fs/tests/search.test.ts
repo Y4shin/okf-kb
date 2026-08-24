@@ -71,6 +71,32 @@ describe('FsSearch', () => {
     expect(refs).toContainEqual({ ty: 'concept', slug: 'gravity' });
   });
 
+  it('excludes status:deprecated notes by default; includeDeprecated includes them', async () => {
+    // a stable note and a deprecated note, both matching the query
+    const stable = note(
+      { type: 'concept', title: 'Current vector store', description: 'the current approach', status: 'stable' },
+      '\nThe current vector store uses json blobs and cosine.\n',
+    );
+    const deprecated = note(
+      { type: 'concept', title: 'Old vector store', description: 'the old approach', status: 'deprecated' },
+      '\nThe old vector store used sqlite-vec vec0.\n',
+    );
+    await write.put({ ref: 'concept:current-vector-store', content: stable });
+    await write.put({ ref: 'concept:old-vector-store', content: deprecated });
+
+    // default: deprecated excluded
+    const def = await search.searchUnified({ q: 'vector store' });
+    const slugsDefault = def.map((h) => ('slug' in h.ref ? h.ref.slug : h.ref.path));
+    expect(slugsDefault).toContain('current-vector-store');
+    expect(slugsDefault).not.toContain('old-vector-store');
+
+    // with includeDeprecated: the deprecated note appears
+    const inc = await search.searchUnified({ q: 'vector store', opts: { includeDeprecated: true } });
+    const slugsInc = inc.map((h) => ('slug' in h.ref ? h.ref.slug : h.ref.path));
+    expect(slugsInc).toContain('current-vector-store');
+    expect(slugsInc).toContain('old-vector-store');
+  });
+
   it('graph returns ancestors/descendants/neighbors for typed relations + prose links', async () => {
     const termContent = note(
       { type: 'term', title: 'Widget', description: 'a small part', id: 'term:widget' },

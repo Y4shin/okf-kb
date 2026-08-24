@@ -74,19 +74,22 @@ export function registerBindingCommand(parent: Command, fb: FlatBinding, ctx: Co
     cmd.option('--content <str>', 'inline content string');
   }
 
-  // Special flags for search-unified: --with-graph
+  // Special flags for search-unified: --with-graph, --include-deprecated
   if (fb.group === 'search' && fb.method === 'searchUnified') {
     cmd.option('--with-graph', 'include graph context in results');
+    cmd.option('--include-deprecated', 'include status:deprecated notes (excluded by default)');
   }
 
-  // Special flags for search-text: --fields
+  // Special flags for search-text: --fields, --include-deprecated
   if (fb.group === 'search' && fb.method === 'searchText') {
     cmd.option('--fields <fields>', 'comma-separated fields to search');
+    cmd.option('--include-deprecated', 'include status:deprecated notes (excluded by default)');
   }
 
-  // Special flags for search-semantic: --k
+  // Special flags for search-semantic: --k, --include-deprecated
   if (fb.group === 'search' && fb.method === 'searchSemantic') {
     cmd.option('--k <n>', 'number of results', undefined);
+    cmd.option('--include-deprecated', 'include status:deprecated notes (excluded by default)');
   }
 
   cmd.action(async (...args: unknown[]) => {
@@ -280,21 +283,23 @@ function buildInput(
     }
   }
 
-  // For search-unified: --with-graph -> opts: { withGraph: true }
+  // For search-unified: --with-graph -> opts: { withGraph: true }; --include-deprecated -> opts.includeDeprecated
   if (fb.group === 'search' && fb.method === 'searchUnified') {
-    if (opts.withGraph) {
-      input.opts = { withGraph: true };
-    }
+    const opt: { withGraph?: boolean; includeDeprecated?: boolean } = {};
+    if (opts.withGraph) opt.withGraph = true;
+    if (opts.includeDeprecated) opt.includeDeprecated = true;
+    if (Object.keys(opt).length) input.opts = opt;
   }
 
-  // For search-text: --fields "a,b" -> opts: { fields: [a, b] }
+  // For search-text: --fields "a,b" -> opts: { fields: [...] }; --include-deprecated -> opts.includeDeprecated
   if (fb.group === 'search' && fb.method === 'searchText') {
-    if (opts.fields) {
-      input.opts = { fields: (opts.fields as string).split(',').map((s) => s.trim()) };
-    }
+    const opt: { fields?: string[]; includeDeprecated?: boolean } = {};
+    if (opts.fields) opt.fields = (opts.fields as string).split(',').map((s) => s.trim());
+    if (opts.includeDeprecated) opt.includeDeprecated = true;
+    if (Object.keys(opt).length) input.opts = opt;
   }
 
-  // For search-semantic: --k <n> -> k: number
+  // For search-semantic: --k <n> -> k: number; --include-deprecated -> includeDeprecated
   if (fb.group === 'search' && fb.method === 'searchSemantic') {
     if (opts.k) {
       input.k = parseInt(opts.k as string, 10);

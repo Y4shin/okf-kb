@@ -33,11 +33,13 @@ const ListParams = Type.Object({
   by: Type.Optional(Type.String()),
 });
 
-// kb_search: search.searchUnified({q, opts?{withGraph?}})
+// kb_search: search.searchUnified({q, opts?{withGraph?, includeDeprecated?}})
+// Deprecated notes are excluded by default; set opts.includeDeprecated to include them.
 const SearchParams = Type.Object({
   q: Type.String({ description: 'Search query' }),
   opts: Type.Optional(Type.Object({
-    withGraph: Type.Optional(Type.Boolean()),
+    withGraph: Type.Optional(Type.Boolean({ description: 'Attach graph-neighbor context to each hit' })),
+    includeDeprecated: Type.Optional(Type.Boolean({ description: 'Include status:deprecated notes (excluded by default)' })),
   })),
 });
 

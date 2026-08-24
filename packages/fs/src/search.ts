@@ -78,20 +78,49 @@ export class FsSearch implements Search {
     }
   }
 
-  async searchText(input: { q: string; opts?: { fields?: string[] } }): Promise<SearchHit[]> {
+  /** Read a note's frontmatter `status` (e.g. 'draft', 'stable', 'deprecated').
+   *  Returns undefined if the note can't be read or has no status. */
+  private async noteStatus(notePath: string): Promise<string | undefined> {
+    try {
+      const raw = await readFile(join(this.deps.space, notePath), 'utf-8');
+      const { frontmatter } = parseNoteFile(raw);
+      return frontmatter.status as string | undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** Drop hits whose note is `status: deprecated`, unless `includeDeprecated`.
+   *  Deprecated notes are not evidence (the kb-ask lifecycle filter); the search
+   *  layer excludes them by default so every consumer gets the right behavior. */
+  private async filterDeprecated(hits: SearchHit[], includeDeprecated?: boolean): Promise<SearchHit[]> {
+    if (includeDeprecated) return hits;
+    const out: SearchHit[] = [];
+    for (const hit of hits) {
+      const path = 'path' in hit.ref ? hit.ref.path : this.localFs.resolvePath({ ref: hit.ref }).path;
+      const notePath = relative(this.deps.space, path);
+      const status = await this.noteStatus(notePath);
+      if (status === 'deprecated') continue;
+      out.push(hit);
+    }
+    return out;
+  }
+
+  async searchText(input: { q: string; opts?: { fields?: string[]; includeDeprecated?: boolean } }): Promise<SearchHit[]> {
     const rows = this.db.raw
       .prepare(`SELECT note_path, title, snippet(notes_fts, -1, '', '', '...', 12) as snip, bm25(notes_fts) as score FROM notes_fts WHERE notes_fts MATCH ? ORDER BY score LIMIT 20`)
       .all(matchQuery(input.q)) as Array<{ note_path: string; title: string; snip: string; score: number }>;
-    return rows.map((r) => ({
+    const hits = rows.map((r) => ({
       ref: this.pathToRef(r.note_path),
       title: r.title ?? r.note_path,
       snippet: r.snip ?? '',
       score: -r.score, // bm25: lower is better -> invert so higher score = better
       mode: 'literal' as const,
     }));
+    return this.filterDeprecated(hits, input.opts?.includeDeprecated);
   }
 
-  async searchSemantic(input: { q: string; k?: number }): Promise<SearchHit[]> {
+  async searchSemantic(input: { q: string; k?: number; includeDeprecated?: boolean }): Promise<SearchHit[]> {
     const k = input.k ?? 10;
     const qVec = await this.deps.embedder.embed(input.q);
     const rows = this.db.raw.prepare(`SELECT id, note_path, heading_path, text, embedding FROM chunks`).all() as ChunkRow[];
@@ -118,11 +147,15 @@ export class FsSearch implements Search {
         mode: 'semantic',
       });
     }
-    return hits;
+    return this.filterDeprecated(hits, input.includeDeprecated);
   }
 
-  async searchUnified(input: { q: string; opts?: { withGraph?: boolean } }): Promise<SearchHit[]> {
-    const [literal, semantic] = await Promise.all([this.searchText({ q: input.q }), this.searchSemantic({ q: input.q })]);
+  async searchUnified(input: { q: string; opts?: { withGraph?: boolean; includeDeprecated?: boolean } }): Promise<SearchHit[]> {
+    const inc = input.opts?.includeDeprecated;
+    const [literal, semantic] = await Promise.all([
+      this.searchText({ q: input.q, opts: { includeDeprecated: inc } }),
+      this.searchSemantic({ q: input.q, includeDeprecated: inc }),
+    ]);
     const K = 60;
     const rrf = new Map<string, { score: number; hit: SearchHit }>();
 

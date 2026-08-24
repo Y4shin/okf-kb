@@ -25,9 +25,9 @@ export interface Read {
 }
 
 export interface Search {
-  searchText(input: { q: string; opts?: { fields?: string[] } }): Promise<SearchHit[]>;
-  searchSemantic(input: { q: string; k?: number }): Promise<SearchHit[]>;
-  searchUnified(input: { q: string; opts?: { withGraph?: boolean } }): Promise<SearchHit[]>;
+  searchText(input: { q: string; opts?: { fields?: string[]; includeDeprecated?: boolean } }): Promise<SearchHit[]>;
+  searchSemantic(input: { q: string; k?: number; includeDeprecated?: boolean }): Promise<SearchHit[]>;
+  searchUnified(input: { q: string; opts?: { withGraph?: boolean; includeDeprecated?: boolean } }): Promise<SearchHit[]>;
   graph(input: { ref: RefInput; dir: 'ancestors' | 'descendants' | 'neighbors' }): Promise<Ref[]>;
   update(input: { ref: RefInput; content: string }): Promise<void>;
   checkId(input: { ref: RefInput }): Promise<CheckReport>;
@@ -54,9 +54,9 @@ export const ListInputSchema = z.object({ type: TypeSchema.optional(), tag: TagS
 export const GraphInputSchema = z.object({ ref: RefSchema, dir: z.enum(['ancestors', 'descendants', 'neighbors']) }).meta({ doc: { desc: 'graph traversal', group: 'search' }, cli: { positional: true, desc: 'note ref' } });
 export const PutInputSchema = z.object({ ref: RefSchema, content: z.string() }).meta({ doc: { desc: 'put a note (full markdown fm+body)', group: 'write' }, cli: { positional: true, desc: 'note ref' } });
 export const DeleteInputSchema = z.object({ ref: RefSchema }).meta({ doc: { desc: 'delete a note', group: 'write' }, cli: { positional: true, desc: 'note ref' } });
-export const SearchTextInputSchema = z.object({ q: z.string(), opts: z.object({ fields: z.array(z.string()).optional() }).optional() }).meta({ doc: { desc: 'literal text search', group: 'search' }, cli: { positional: true, desc: 'query' } });
-export const SearchSemanticInputSchema = z.object({ q: z.string(), k: z.number().int().positive().optional() }).meta({ doc: { desc: 'semantic search', group: 'search' }, cli: { positional: true, desc: 'query' } });
-export const SearchUnifiedInputSchema = z.object({ q: z.string(), opts: z.object({ withGraph: z.boolean().optional() }).optional() }).meta({ doc: { desc: 'unified (RRF) search', group: 'search' }, cli: { positional: true, desc: 'query' } });
+export const SearchTextInputSchema = z.object({ q: z.string(), opts: z.object({ fields: z.array(z.string()).optional(), includeDeprecated: z.boolean().optional() }).optional() }).meta({ doc: { desc: 'literal text search (deprecated notes excluded by default; set opts.includeDeprecated to include)', group: 'search' }, cli: { positional: true, desc: 'query' } });
+export const SearchSemanticInputSchema = z.object({ q: z.string(), k: z.number().int().positive().optional(), includeDeprecated: z.boolean().optional() }).meta({ doc: { desc: 'semantic search (deprecated notes excluded by default)', group: 'search' }, cli: { positional: true, desc: 'query' } });
+export const SearchUnifiedInputSchema = z.object({ q: z.string(), opts: z.object({ withGraph: z.boolean().optional(), includeDeprecated: z.boolean().optional() }).optional() }).meta({ doc: { desc: 'unified (RRF) search (deprecated notes excluded by default; set opts.includeDeprecated to include)', group: 'search' }, cli: { positional: true, desc: 'query' } });
 export const SearchUpdateInputSchema = z.object({ ref: RefSchema, content: z.string() }).meta({ doc: { desc: 'incremental index refresh for one note', group: 'search' }, cli: { positional: true, desc: 'note ref' } });
 export const CheckIdInputSchema = z.object({ ref: RefSchema }).meta({ doc: { desc: 'post-write conformance check for one note', group: 'search' }, cli: { positional: true, desc: 'note ref' } });
 export const ResolvePathInputSchema = z.object({ ref: RefSchema }).meta({ doc: { desc: 'resolve a ref to a path', group: 'localFs' }, cli: { positional: true, desc: 'note ref' } });
