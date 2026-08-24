@@ -6,6 +6,7 @@
 // inject FakeEmbedder for tests via opts.embedder.
 
 import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import envPaths from 'env-paths';
@@ -60,9 +61,6 @@ function loadManifest(space: string): Manifest {
   if (existsSync(manifestPath)) {
     // sync read via readFileSync for simplicity in the daemon bootstrap
     try {
-      // Use a sync import path via node:fs readFileSync (avoids async bootstrap churn)
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { readFileSync } = require('node:fs') as typeof import('node:fs');
       const raw = readFileSync(manifestPath, 'utf-8');
       const parsed = YAML.parse(raw);
       return ManifestSchema.parse(parsed);
