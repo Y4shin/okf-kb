@@ -130,8 +130,10 @@ function extractGlobalOpts(argv: string[]): { globalOpts: { url?: string; token?
 async function runDaemon(argv: string[]): Promise<number> {
   const { startDaemon } = await import('@kb/daemon');
 
-  // Parse --port and --space from argv
-  let port = 0;
+  // Parse --port and --space from argv. If --port is not given, leave port undefined so
+  // startDaemon applies its own default (KB_PORT env or 30700) — passing port:0 would
+  // force an ephemeral port and break the client's default-URL assumption.
+  let port: number | undefined;
   let space: string | undefined;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
