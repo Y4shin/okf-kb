@@ -6,7 +6,8 @@ task: ../task.md
 mode: afk
 status: done
 size: l
-blocked_by: [fs-groups-and-sqlite-index]
+blocked_by:
+- fs-groups-and-sqlite-index
 ---
 
 ## End-to-end behavior
