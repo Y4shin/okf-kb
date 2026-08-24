@@ -121,7 +121,7 @@ describe('kb-ask skill: RAG steps present and ordered', () => {
     expect(steps.stateless).toBeGreaterThanOrEqual(0);
   });
 
-  it('steps appear in the correct order: retrieve → lifecycle → budget → citations → verify → refuse → stateless', () => {
+  it('steps appear in the correct order: retrieve → lifecycle → budget → answer-grounded → citations → verify → refuse → stateless', () => {
     // Use the step headings (## Step N — <name>) for ordering, since intro
     // text may mention concepts out of order. The headings are the canonical
     // sequence markers.
@@ -130,6 +130,7 @@ describe('kb-ask skill: RAG steps present and ordered', () => {
       { name: 'retrieve', idx: headingIdx(1) },
       { name: 'lifecycle', idx: headingIdx(2) },
       { name: 'contextBudget', idx: headingIdx(3) },
+      { name: 'answerGrounded', idx: headingIdx(4) },
       { name: 'citations', idx: headingIdx(5) },
       { name: 'verify', idx: headingIdx(6) },
       { name: "i-don't-know", idx: headingIdx(7) },
@@ -146,6 +147,16 @@ describe('kb-ask skill: RAG steps present and ordered', () => {
         `${order[i].name} (idx ${order[i].idx}) should come after ${order[i - 1].name} (idx ${order[i - 1].idx})`,
       ).toBeGreaterThan(order[i - 1].idx);
     }
+  });
+
+  it('Step 4 (Answer Grounded) says to synthesize from retrieved context only — no outside knowledge', () => {
+    // Find the Step 4 section (between 'Step 4 ' and 'Step 5 ')
+    const start = text.indexOf('Step 4 ');
+    const end = text.indexOf('Step 5 ');
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    const step4 = text.slice(start, end).toLowerCase();
+    expect(step4).toMatch(/retrieved context only|from the retrieved context|do not use outside knowledge|no outside knowledge/);
   });
 });
 
