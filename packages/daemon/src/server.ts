@@ -4,10 +4,9 @@
 // bind 127.0.0.1 only. Bearer auth on both /trpc and /mcp.
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { createKb } from '@kb/core';
 import { FsLocalFs, FsRead, FsSearch, FsWrite, FsIndexAdmin } from '@kb/fs';
 import type { AllGroups } from '@kb/protocol';
-import { flattenBindings, fullBindings } from '@kb/protocol';
+import { fullBindings } from '@kb/protocol';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { buildCommonDeps, type BuildDepsOptions } from './deps.js';
 import { getOrMintToken } from './auth.js';
@@ -36,20 +35,14 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Daemon
   const token = opts.token ?? getOrMintToken();
   const port = opts.port ?? (process.env.KB_PORT ? parseInt(process.env.KB_PORT, 10) : 0);
 
-  // Build CommonDeps + Kb
+  // Build CommonDeps + the real Fs* implementations.
+  // The typestate builder (createKb) assembles group *shapes* with stubs that throw;
+  // the daemon constructs the real Fs* classes directly (the builder's purpose is
+  // compile-time type gating, which the Fs* classes satisfy via `implements`).
   const deps = buildCommonDeps(opts);
-  const kb = createKb(deps)
-    .declare()
-    .withRead()
-    .withSearch()
-    .withWrite()
-    .withLocalFs()
-    .withIndexAdmin()
-    .build() as AllGroups;
 
-  // Wire the real Fs* implementations into the kb object (the builder's stubs throw).
-  // The typestate builder assembles the group *shape*; we replace the stubs with real impls.
-  // (The builder's make* stubs throw 'impl in @kb/fs'; we construct the real Fs* classes here.)
+  // Construct the real Fs* implementations directly (the typestate builder's
+  // stubs throw; the Fs* classes implement the @kb/core group interfaces).
   const realKb: AllGroups = {
     localFs: new FsLocalFs(deps),
     read: new FsRead(deps),
@@ -57,7 +50,6 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Daemon
     write: new FsWrite(deps, new FsSearch(deps)),
     indexAdmin: new FsIndexAdmin(deps),
   };
-  void kb; // the builder proves the shape; we use realKb
 
   // tRPC handler
   const trpcHandler = createTrpcHandler(realKb as never, token);
