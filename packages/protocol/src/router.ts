@@ -6,7 +6,7 @@
 import { initTRPC } from '@trpc/server';
 import type { Kb } from '@kb/core';
 import { EXCLUDED } from '@kb/core';
-import { fullBindings } from './records.js';
+import { fullBindings, piBindings } from './records.js';
 import type { AllGroups, FullBindings } from './records.js';
 
 // query vs mutation: read-like methods are queries; write-like are mutations.
@@ -53,29 +53,41 @@ export function flattenBindings(bindings: FullBindings): FlatBinding[] {
 }
 
 /**
- * buildRouter(kb) — given a built Kb (the mother object with localFs/read/search/
- * write/indexAdmin groups), return a tRPC router where each binding → a
- * publicProcedure.input(b.inputSchema).query/.mutation that calls kb.<group>.<method>(input).
+ * buildRouter(kb, bindings?) — given a built Kb and optionally a binding record
+ * (default: fullBindings), return a tRPC router where each binding → a
+ * publicProcedure.input(b.inputSchema).query/.mutation that calls
+ * kb.<group>.<method>(input).
  *
  * Each group becomes a nested sub-router so the client addresses procedures as
  * `read.get`, `write.put`, etc.
  */
-export function buildRouter(kb: Kb<AllGroups>) {
+export function buildRouter(kb: Kb<AllGroups>, bindings: FullBindings = fullBindings) {
   const t = initTRPC.create();
-  const flat = flattenBindings(fullBindings);
+  const flat = flattenBindings(bindings);
 
   // group → procedures
   const groupProcedures: Record<string, Record<string, unknown>> = {};
   for (const fb of flat) {
     const groupObj = (kb as unknown as Record<string, Record<string, (i: unknown) => unknown>>)[fb.group];
     const methodFn = groupObj[fb.method];
+    // Materialize async-iterable results (read.list returns AsyncIterable) to
+    // arrays so tRPC can serialize them over httpBatchLink.
+    const call = async (input: unknown) => {
+      const res = await methodFn.call(groupObj, input);
+      if (res && typeof (res as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+        const out: unknown[] = [];
+        for await (const item of res as AsyncIterable<unknown>) out.push(item);
+        return out;
+      }
+      return res;
+    };
     const proc = fb.isQuery
       ? t.procedure
           .input(fb.inputSchema as never)
-          .query(({ input }) => methodFn.call(groupObj, input))
+          .query(({ input }) => call(input))
       : t.procedure
           .input(fb.inputSchema as never)
-          .mutation(({ input }) => methodFn.call(groupObj, input));
+          .mutation(({ input }) => call(input));
     (groupProcedures[fb.group] ??= {})[fb.method] = proc;
   }
 
@@ -89,3 +101,16 @@ export function buildRouter(kb: Kb<AllGroups>) {
 
 /** The AppRouter type — the CLI imports this as a type for createTRPCProxyClient<AppRouter>(). */
 export type AppRouter = ReturnType<typeof buildRouter>;
+
+/**
+ * Build the pi-facing router (no write group). Same as buildRouter but uses
+ * piBindings (which omits Write.put/Write.delete via EXCLUDED).
+ */
+export function buildPiRouter(kb: Kb<AllGroups>) {
+  return buildRouter(kb, piBindings);
+}
+
+/** The pi-facing router type — the daemon's AppRouter without the 'write' group.
+ * pi authors with native write/edit; the client type simply doesn't expose Write.
+ * This is a proper tRPC Router (not an Omit) so createTRPCProxyClient works. */
+export type PiAppRouter = ReturnType<typeof buildPiRouter>;
