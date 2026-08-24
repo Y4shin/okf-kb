@@ -6,6 +6,10 @@ title: Remote-agent daemon access — conditional Write/Read tools when KB_URL i
 map: agent-knowledge-base
 status: ready
 blocked_by: []
+slices:
+  - daemon-bind-tls-capabilities
+  - pi-adapter-conditional-write
+  - remote-deployment-doc-and-roundtrip
 ---
 
 ## User-visible outcome
@@ -125,3 +129,20 @@ daemon, pi keeps using native `write`/`edit` + `kb_update` (no
 - May feed a `kb daemon --remote` deployment guide (systemd + caddy +
   TLS) as a doc.
 - Does NOT change the local-localhost v1 contract; backwards compatible.
+
+## Subtasks
+
+| # | Wave | Slice | Size | Repo file |
+|---|---|---|---|---|
+| 1 | 1 | daemon-bind-tls-capabilities | m | [slices/01-daemon-bind-tls-capabilities.md](slices/01-daemon-bind-tls-capabilities.md) |
+| 2 | 2 | pi-adapter-conditional-write | m | [slices/02-pi-adapter-conditional-write.md](slices/02-pi-adapter-conditional-write.md) |
+| 3 | 3 | remote-deployment-doc-and-roundtrip | m | [slices/03-remote-deployment-doc-and-roundtrip.md](slices/03-remote-deployment-doc-and-roundtrip.md) |
+
+**Execution waves:**
+- Wave 1: S1 (daemon bind/TLS/capabilities)
+- Wave 2: S2 (pi-adapter conditional write — needs the remote-bindable daemon)
+- Wave 3: S3 (deployment doc + remote round-trip — needs S1 + S2)
+
+No parallelism — a strict chain S1 → S2 → S3 (each wave is one slice).
+The cut is vertical: S1 makes the daemon safe to expose; S2 makes the
+client adaptive; S3 proves it end-to-end + documents the operator path.
