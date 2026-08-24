@@ -254,12 +254,16 @@ describe('kb-save-session skill: pure markdown — no code / no daemon imports',
   });
 });
 
-describe('kb-save-session skill: no kb_put / kb_delete', () => {
+describe('kb-save-session skill: remote note references kb_put / kb_delete', () => {
   const text = loadSkill();
   const lc = text.toLowerCase();
 
-  it('does NOT reference kb_put or kb_delete (not registered; pi authors with native write/edit)', () => {
-    expect(lc).not.toMatch(/kb_put|kb_delete/);
+  it('references kb_put and kb_delete in the remote KB note (slice 3: when the KB is remote, author with kb_put/kb_delete)', () => {
+    // Slice 3 adds a one-line note near the authoring step.
+    expect(lc).toMatch(/kb_put/);
+    expect(lc).toMatch(/kb_delete/);
+    expect(lc).toMatch(/remote/);
+    expect(lc).toMatch(/isremotekb/);
   });
 });
 

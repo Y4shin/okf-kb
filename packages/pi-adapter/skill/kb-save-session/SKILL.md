@@ -94,6 +94,12 @@ same session later (Step 8).
 
 ## Step 4 — Author (Native Write, Provenance + Lifecycle)
 
+> **Remote KB note:** When the KB is remote (the pi adapter's `isRemoteKb`
+> detects a non-localhost `KB_URL`), author with `kb_put`/`kb_delete`, not
+> native `write`/`edit` — native writes go to your local disk, not the
+> daemon's bundle. The remote tool set registers `kb_put`/`kb_delete`
+> automatically; use `kb_put` to author instead of native `write`/`edit`.
+
 Author each new note with pi's **native `write`/`edit`** (the daemon's
 pi-facing surface has no `Write; you edit files directly and the daemon
 reindexes after — see kb-curate's authoring model). Use the frontmatter shape

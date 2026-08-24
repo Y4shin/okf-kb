@@ -170,15 +170,18 @@ describe('kb-curate skill: tool references', () => {
   });
 });
 
-describe('kb-curate skill: no kb_put / kb_delete', () => {
+describe('kb-curate skill: remote note references kb_put / kb_delete', () => {
   const text = loadSkill();
   const lc = text.toLowerCase();
 
-  it('does NOT reference kb_put or kb_delete (not registered; pi authors with native write/edit)', () => {
-    // The skill must not instruct using kb_put/kb_delete, since they are
-    // not registered tools. It may mention they don't exist, but must not
-    // instruct to use them.
-    expect(lc).not.toMatch(/kb_put|kb_delete/);
+  it('references kb_put and kb_delete in the remote KB note (slice 3: when the KB is remote, author with kb_put/kb_delete)', () => {
+    // Slice 3 adds a one-line note: "When the KB is remote (isRemoteKb detects a
+    // non-localhost KB_URL), author with kb_put/kb_delete, not native write/edit."
+    // The skill must reference kb_put/kb_delete in this remote context.
+    expect(lc).toMatch(/kb_put/);
+    expect(lc).toMatch(/kb_delete/);
+    expect(lc).toMatch(/remote/);
+    expect(lc).toMatch(/isremotekb/);
   });
 });
 

@@ -100,6 +100,12 @@ gated by a confirmation). Not a blanket prohibition, not a blanket permission
 
 ## Rule 5 — Authoring Model (b) — native write/edit + kb_update + kb_check_id
 
+> **Remote KB note:** When the KB is remote (the pi adapter's `isRemoteKb`
+> detects a non-localhost `KB_URL`), author with `kb_put`/`kb_delete`, not
+> native `write`/`edit` — native writes go to your local disk, not the
+> daemon's bundle. The remote tool set registers `kb_put`/`kb_delete`
+> automatically; use them instead of the native authoring flow below.
+
 Pi authors with its **native `write`/`edit`** tools. The daemon's pi-facing
 surface has no `Write` — pi edits files directly and the daemon reindexes
 after. There are no separate put/delete tools; you author with native

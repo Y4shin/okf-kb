@@ -122,6 +122,24 @@ All three are pure-markdown skills built on the `kb_*` tools, auto-gated
 by content/structure tests. Human review of distilled/researched note
 quality is a follow-up task.
 
+### Remote-agent daemon access (remote-daemon-conditional-write)
+
+The daemon can be exposed to other machines: `startDaemon` takes a `host`
+(default `127.0.0.1`; `0.0.0.0` or a hostname for remote) and **refuses a
+non-localhost bind without TLS** (either `KB_DAEMON_TLS_CERT`/`KEY` env or
+the explicit `KB_ALLOW_REMOTE_INSECURE=1` escape hatch, which warns).
+`GET /` returns `{ok, service, version, groups:[...]}` (not Bearer-gated;
+`groups` derived from `fullBindings` keys). The **recommended** remote path
+is daemon-on-`127.0.0.1` + a TLS reverse proxy (caddy/nginx) on
+`0.0.0.0:443` — see `docs/remote-deployment.md` (systemd + caddyfile
+snippets, threat model, governance). The pi adapter detects `isRemoteKb
+(KB_URL)` (non-loopback) and conditionally registers `kb_put`/`kb_delete`
+(full `AppRouter` + `fullBindings`, 10 tools) so a remote agent authors
+**through the daemon** (native `write`/`edit` would hit the agent's local
+disk, not the daemon's bundle). Localhost behavior is unchanged (8 tools,
+no `kb_put`/`kb_delete`). Backwards compatible. The curation skills carry a
+one-line "when remote, use `kb_put`/`kb_delete`" note.
+
 ## Do not attempt AI reproduction for
 
 - The **stand-up-silverbullet** task (manual): requires running Docker and

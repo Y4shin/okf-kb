@@ -4,9 +4,10 @@ slug: pi-adapter-conditional-write
 title: "pi adapter: conditional PiAppRouter + kb_put/kb_delete when KB_URL is non-localhost"
 task: ../task.md
 mode: afk
-status: todo
+status: done
 size: m
-blocked_by: [daemon-bind-tls-capabilities]
+blocked_by:
+- daemon-bind-tls-capabilities
 ---
 
 ## End-to-end behavior
@@ -109,3 +110,40 @@ with native `write`/`edit` + `kb_update`).
   call. The `fullBindings` loop must skip `EXCLUDED` entries (it already
   does). `0.0.0.0` in `KB_URL` is ambiguous — treat as remote (not a
   loopback literal) and document it.
+
+## Implementation notes
+
+- **`isRemoteKb(url)`** exported from `config.ts`: string hostname
+  check via `new URL(url).hostname`; returns `false` for `127.0.0.1`,
+  `localhost`, `::1`, and the bracketed IPv6 `[::1]` (because
+  `new URL().hostname` returns the bracketed form for IPv6 literals);
+  malformed URLs return `false`; `0.0.0.0` returns `true` (not a
+  loopback literal).
+- **Conditional `session_start` branch**: local → `PiAppRouter` +
+  `piBindings` = 8 tools, NO `kb_put`/`kb_delete` (unchanged); remote →
+  `AppRouter` + `fullBindings` = 10 tools incl. `kb_put`/`kb_delete`.
+  The local/remote decision is made once at `session_start` from
+  `KB_URL`; not re-checked per call.
+- **`createKbTrpcClient`** generic over `R = PiAppRouter | AppRouter`.
+- **`registerKbTools(pi, client, bindings)`** generalized to take a
+  binding set; `kb_put`/`kb_delete` specs added — both are mutations
+  (tRPC `.mutate`), throw-on-failure (matching the existing tool
+  contract), and are filtered by the binding set (only present under
+  `fullBindings`).
+- **Local behavior unchanged** (backwards compatible): existing
+  local-case tests stay green.
+- **Validation**: `tsc --build` exit 0; vitest 197 passed + 1 skipped
+  (9 new tests in `tools.test.ts`).
+
+### Deviations / refinements
+
+- **`package.json` dep paths** (commit `17c3f84`): the extension
+  `package.json` had `@kb/*` deps as `file:../..` (the repo root, which
+  has no `package.json`) — fixed to `file:../../<pkg>` so pi can load
+  the extension. This was a pre-existing build break uncovered by the
+  adapter work.
+- **IPv6 refinement**: the `[::1]` bracket form is recognized as
+  loopback, because `new URL().hostname` returns the bracketed form for
+  IPv6 literals (e.g. `http://[::1]:30700` → hostname `[::1]`). The
+  loopback set now includes the bracketed `[::1]` in addition to the
+  bare `::1`.

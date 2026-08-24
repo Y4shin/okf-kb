@@ -56,6 +56,12 @@ vs sqlite-fts5"). Do not attempt to boil the ocean; scope the research first.
 
 ## Step 2 — Synthesize Notes
 
+> **Remote KB note:** When the KB is remote (the pi adapter's `isRemoteKb`
+> detects a non-localhost `KB_URL`), author with `kb_put`/`kb_delete`, not
+> native `write`/`edit` — native writes go to your local disk, not the
+> daemon's bundle. The remote tool set registers `kb_put`/`kb_delete`
+> automatically; use `kb_put` to author instead of native `write`/`edit`.
+
 Synthesize the gathered sources into OKF notes. Pick the `type` per
 **kb-curate's type-selection rule** (see kb-curate): `reference`, `concept`,
 or `term` for research notes.
