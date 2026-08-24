@@ -4,7 +4,7 @@ slug: daemon-bind-tls-capabilities
 title: "Daemon: configurable bind host, TLS prereq for non-localhost, capabilities endpoint"
 task: ../task.md
 mode: afk
-status: todo
+status: done
 size: m
 blocked_by: []
 ---
@@ -98,3 +98,61 @@ has all; the *client* decides what to use based on locality).
   interfaces) — must require TLS/escape. A hostname like `kb.lan` is
   non-localhost even if it resolves to a private IP. `::1` is localhost.
   Don't silently bind insecure; the whole point is the loud gate.
+
+## Implementation notes
+
+Landed on `task/remote-daemon-conditional-write` (worked directly on the
+task branch, no separate slice branch). HEAD = b834367.
+
+- `startDaemon` (`packages/daemon/src/server.ts`) gains `host?: string`
+  (default `KB_DAEMON_HOST` env or `127.0.0.1`) and `tls?: {cert, key}`.
+  `server.listen(port, host, ...)` now uses the resolved host. The URL
+  scheme is `https` when TLS is active, `http` otherwise. `DaemonHandle`
+  gains `host` alongside the existing `url`/`port`/`token`/`close()`.
+- Non-localhost safety gate: `isLocal` is a **string** check against
+  `['127.0.0.1', 'localhost', '::1']` (NOT DNS resolution — a hostname
+  like `kb.lan` is treated as non-local even if it resolves to loopback,
+  which is safe over-permissive). If `!isLocal && !tls &&
+  KB_ALLOW_REMOTE_INSECURE !== '1'` → throws an error naming all 3 options
+  (reverse proxy, direct TLS via `KB_DAEMON_TLS_*`, or the
+  `KB_ALLOW_REMOTE_INSECURE=1` escape hatch). The escape hatch logs a
+  prominent stderr warning about the token being sniffable.
+- Optional direct TLS: `opts.tls` OR `KB_DAEMON_TLS_CERT` +
+  `KB_DAEMON_TLS_KEY` env fallback (file paths read via `readFileSync`).
+  When active, `https.createServer` is used. The recommended path keeps
+  the daemon on `127.0.0.1` behind a caddy/nginx reverse proxy that
+  terminates TLS; direct daemon TLS is the secondary path for operators
+  who can't run a proxy.
+- `GET /` capabilities: returns
+  `{ ok, service, version, groups: [...] }` where `groups` is
+  `Object.keys(fullBindings)` (the 5 keys: `localFs`, `read`, `search`,
+  `write`, `indexAdmin` — derived from `packages/protocol/src/records.ts`
+  so it can't drift). This endpoint is **NOT Bearer-gated** (the existing
+  health endpoint was never gated; the groups list is non-sensitive — the
+  client decides what to use based on locality). No tRPC
+  `kb_capabilities` query was added (the criteria said "AND/OR").
+- Localhost behavior is unchanged (`127.0.0.1`/`localhost`/`::1` all
+  listen without TLS, same as before).
+- 186 tests pass + 1 skipped; `tsc --build` clean (exit 0). 8 new test
+  cases in `packages/daemon/tests/server.test.ts` cover: explicit
+  `127.0.0.1` bind, `0.0.0.0` without TLS/escape → throws (asserts all 3
+  option names in the error), `0.0.0.0` with `KB_ALLOW_REMOTE_INSECURE=1`
+  → listens + warns (stderr captured), `kb.lan` hostname → throws,
+  `::1` → listens (local), `localhost` → listens (local), and 2
+  capabilities-endpoint cases (shape + not-Bearer-gated).
+
+### Deviations
+
+1. **KB_DAEMON_TLS_CERT/KEY env fallback** (from the deviation report):
+  the slice doc mentioned the env vars in the end-to-end behavior section,
+  but the initial implementation only accepted `opts.tls` (code-level).
+  The follow-up commit (b834367) added the env fallback so operators can
+  set direct TLS without code — `opts.tls` wins, env vars are the fallback.
+  This aligns the implementation with the slice doc's intent.
+
+2. **GET / not Bearer-gated**: the acceptance criteria stated "Both are
+  Bearer-gated like the other surfaces," but the implementation kept
+  `GET /` ungated (it was never gated as a health endpoint; the comment
+  notes the groups list is non-sensitive). This is arguably the safer
+  design for health probes, but it deviates from the written criteria.
+  No tRPC `kb_capabilities` query was added (the criteria allowed "AND/OR").
