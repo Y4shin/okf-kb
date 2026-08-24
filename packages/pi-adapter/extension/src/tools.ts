@@ -6,7 +6,7 @@
 //
 // NO kb_put/kb_delete — pi authors with native write/edit, then kb_update to reindex.
 
-import { Type, type Static } from 'typebox';
+import { Type } from 'typebox';
 import { StringEnum } from '@earendil-works/pi-ai';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { piBindings, flattenBindings } from '@kb/protocol';
