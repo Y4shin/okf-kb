@@ -4,7 +4,7 @@ type: feature
 slug: remote-daemon-conditional-write
 title: Remote-agent daemon access — conditional Write/Read tools when KB_URL is non-localhost
 map: agent-knowledge-base
-status: ready
+status: done
 blocked_by: []
 slices:
   - daemon-bind-tls-capabilities
@@ -146,3 +146,73 @@ daemon, pi keeps using native `write`/`edit` + `kb_update` (no
 No parallelism — a strict chain S1 → S2 → S3 (each wave is one slice).
 The cut is vertical: S1 makes the daemon safe to expose; S2 makes the
 client adaptive; S3 proves it end-to-end + documents the operator path.
+
+## Implementation notes
+
+Task complete. All three slices landed on `task/remote-daemon-conditional-write`.
+217 tests + 1 skipped, `tsc --strict` clean.
+
+### What was built
+
+Remote-agent daemon access: an agent (pi or any tRPC client) running on a
+**different machine** than the KB daemon can author KB notes through the
+daemon, since the agent's native `write`/`edit` cannot reach the bundle on
+the daemon host's disk.
+
+- **Daemon (slice 1):** `startDaemon` accepts a `host` option (default
+  `127.0.0.1`; `0.0.0.0` or a hostname for remote). A **TLS safety gate** refuses
+  to bind non-localhost without TLS configured, unless `KB_ALLOW_REMOTE_INSECURE=1`
+  is set (with a logged warning). A `GET /` capabilities endpoint advertises
+  which groups the daemon exposes (`{ok, service, version, groups}` — always
+  `localFs`/`read`/`search`/`write`/`indexAdmin`, not Bearer-gated). Optional
+  daemon TLS via `KB_DAEMON_TLS_CERT`/`KB_DAEMON_TLS_KEY`.
+- **pi adapter (slice 2):** `isRemoteKb(url)` — string hostname check
+  (`127.0.0.1`/`localhost`/`::1`/`[::1]` → false; `0.0.0.0` or any other → true).
+  At `session_start`, the adapter conditionally activates the tool set:
+  **local** → `PiAppRouter` + `piBindings` (8 tools, no `kb_put`/`kb_delete`,
+  pi authors with native `write`/`edit` — unchanged); **remote** → `AppRouter` +
+  `fullBindings` (10 tools incl. `kb_put`/`kb_delete` — pi authors through the
+  daemon). `createKbTrpcClient` + `registerKbTools` generalized over the binding
+  set. Local behavior is backwards-compatible (unchanged).
+- **Deployment guide + round-trip (slice 3):** `docs/remote-deployment.md`
+  (systemd + caddy/nginx TLS reverse proxy, config env, client side, threat
+  model, governance, capabilities check). An end-to-end `kb_put`→`kb_get` +
+  `kb_check_id` + `kb_delete` round-trip test against a test daemon, asserting
+  the note's provenance (`generated.by`) is preserved by the daemon's
+  `Write.put`, `status: draft`, and lands on the daemon's bundle path (not the
+  agent's local disk). 13-section content/structure test on the doc.
+  One-line remote-authoring notes in 3 skills (`kb-curate`/`kb-save-session`/
+  `kb-research`; `kb-ask` skipped).
+
+### Recommended remote path
+
+The recommended deployment is **daemon on `127.0.0.1` + a TLS reverse proxy
+(caddy/nginx) on `0.0.0.0:443`** — this keeps the daemon simple (plain HTTP)
+and puts TLS + Let's Encrypt at the edge. The daemon's own TLS mode
+(`KB_DAEMON_TLS_CERT`/`KEY`) is a **secondary** path for simpler setups.
+
+### Threat model
+
+The Bearer token is **authentication, not network security** — it stops an
+unauthorized client, but without TLS the token is sniffable on the wire. TLS is
+the network layer. Remote = a network-exposed KB, so use a strong token + TLS
++ ideally a private network/VPN.
+
+### Provenance
+
+The daemon's `Write.put` path maintains provenance: it **preserves** the
+`generated.by` the agent sends in the note's frontmatter (it does not invent it
+if omitted). Provenance is non-negotiable — the note must carry it; the daemon
+doesn't drop it. The governance rules (edit-anything + git; never self-promote
+`draft`→`stable`; deprecate with consent) hold through the remote write path.
+
+### Backwards compatibility
+
+Local-localhost behavior is unchanged (pi authors with native `write`/`edit`,
+8 tools, no `kb_put`/`kb_delete`). The remote branch is additive.
+
+### Follow-up
+
+Human review of the deployment guide's **usability** (can a real operator
+follow it to stand up a TLS-fronted remote daemon end-to-end) is a follow-up,
+by design (mode hitl). The auto-gate (round-trip + doc-content tests) passes.
