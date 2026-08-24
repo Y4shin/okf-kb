@@ -4,7 +4,7 @@ type: feature
 slug: pi-adapter-skill-and-tools
 title: pi adapter — KB tRPC client tools + conversational Q&A (kb-ask) skill
 map: agent-knowledge-base
-status: ready
+status: done
 blocked_by:
   - kb-client-js-api
 slices:
@@ -95,3 +95,74 @@ with pi's native `write`/`edit` (the daemon's pi-facing surface omits
   anything (git is the safety net); never self-promotes `draft`→`stable`;
   deprecates only with explicit consent; links don't duplicate; provenance
   non-negotiable.
+
+## Implementation notes
+
+The pi adapter is a **tRPC-client pi extension**
+(`packages/pi-adapter`) that exposes 8 KB tools to a pi agent —
+`kb_get` (Read.get), `kb_list` (Read.list), `kb_search`
+(Search.searchUnified), `kb_graph` (Search.graph), `kb_update`
+(Search.update, for post-write reindex), `kb_check_id` (Search.checkId),
+and `kb_resolve_path`/`kb_resolve_id` (LocalFs) — each mapped from a
+daemon tRPC procedure generated from the pi-shaped `GroupBindings` subset
+(`piBindings`). There is **no `kb_put`/`kb_delete`**: pi authors with its
+native `write`/`edit` (the daemon's pi-facing binding subset omits
+`Write.put`/`Write.delete`); the agent reindexes via `kb_update`. Tools
+**throw on failure** (pi contract: a thrown error is surfaced, not
+swallowed) with a mapped user-facing message. Config is `KB_URL` +
+`KB_TOKEN` (env/settings, no committed secrets).
+
+The **kb-ask** skill (`packages/pi-adapter/skill/kb-ask/SKILL.md`) is a
+pure-markdown RAG instruction set (no code): retrieve via `kb_search`
+(`searchUnified`, RRF-blended, k≈8, `withGraph`) → lifecycle filter
+(document-level, exclude `deprecated`, flag `stale_after`-past, include
+`draft`/`unverified` with marker) → fill a 4k-token context budget
+(`qa.contextBudgetTokens` from `.kb/config`) → answer grounded in
+retrieved context (no outside knowledge) → inline
+`[Title](formatRef(ref))` citations → verify-before-emit (every cited id
+resolves via `kb_get`/`kb_resolve_id`; re-verify on emit; no hallucinated
+links) → "I don't know" (cosine floor ~0.25 or zero hits after filter;
+names what was tried) → stateless per question. Authoring/governance notes:
+`generated.by = pi/<version>/<model>`, native `write`/`edit` +
+`kb_update` + `kb_check_id`, never self-promote `draft`→`stable`,
+deprecate with consent, provenance non-negotiable.
+
+pi is the **first adapter** proving the daemon + tRPC surface is
+agent-agnostic — no pi-specific coupling leaks into the daemon or OKF.
+
+Full suite: **115 tests passed + 1 skipped** (the opt-in
+`embedder.integration.test.ts`), `tsc --build` clean. Slice 1
+(`kb-tools-extension`) added the extension + 8 tools; slice 2
+(`conversational-qa-rag`) added the `kb-ask` skill + a 16-test
+content/structure auto-gate
+(`packages/pi-adapter/tests/kb-ask-skill.test.ts`).
+
+### Deviations folded in (from the grilling/arch-spec)
+
+- **`PiAppRouter` typed as `ReturnType<typeof buildPiRouter>`**, not as
+  `Omit` of the full daemon router — the pi binding subset is a
+  first-class constructed router, not a subtractive view.
+- **TOOL_SPECS-driven registration**: tools are registered from a
+  declarative `TOOL_SPECS` table (name, procedure path, arg/result types)
+  rather than hand-wired `pi.registerTool` calls, so adding a tool is a
+  one-line spec edit.
+- **Throw-on-failure**: tool failures throw (pi contract) instead of
+  returning `null`/swallowing; the extension maps the tRPC error to a
+  user-facing message.
+- **`kb_graph` predicate parameter removed**: the daemon's `Search.graph`
+  procedure's predicate-arg schema was dropped from the pi binding subset
+  (predicate filtering is not exposed to the pi agent in v1), removing the
+  schema drift between the pi hand-mirrored typebox schemas and the
+  daemon's Zod schemas.
+
+### Hitl gate deferred
+
+Slice 2 (`conversational-qa-rag`) is `mode: hitl`. Its automation gate is
+the content/structure test (RAG steps present + ordered, pure markdown, no
+code). The **real human review of answer/citation quality** against a
+live KB — judging groundedness, citation resolution in the SB UI, correct
+"I don't know", draft/deprecated handling, context truncation — is a
+**separate follow-up task** (`review-kb-ask-qa-quality`, created by the
+parent) and is **not** part of this task's acceptance. That review is a
+prerequisite for confidence in the `kb-ask` surface before the
+`second-brain-curation` task builds on it.

@@ -1,0 +1,1 @@
+{"name": "@kb/pi-extension", "type": "module", "version": "0.1.0", "dependencies": {"@trpc/client": "*", "@kb/core": "file:../..", "@kb/protocol": "file:../..", "@kb/daemon": "file:../..", "typebox": "*", "@earendil-works/pi-ai": "*"}, "pi": {"extensions": ["./src/index.ts"]}}

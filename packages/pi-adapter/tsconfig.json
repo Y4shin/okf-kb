@@ -1,0 +1,1 @@
+{"extends": "../../tsconfig.base.json", "compilerOptions": {"composite": true, "rootDir": "extension/src", "outDir": "dist"}, "references": [{"path": "../core"}, {"path": "../fs"}, {"path": "../protocol"}, {"path": "../daemon"}], "include": ["extension/src"]}

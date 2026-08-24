@@ -85,6 +85,22 @@ mechanically from the binding records): `kb read.get`, `kb write.put`,
 (special-cased). `--json` for machine output; `--help` per command;
 exit code 1 on error / `index-admin.check` `ok:false`.
 
+## pi adapter (the first consumer)
+
+The pi adapter lives in `packages/pi-adapter` (extension/ + skill/kb-ask/).
+Install it into the user's pi tree with `npm run install:pi` (symlinks
+`extension` → `~/.pi/agent/extensions/pi-kb` and `skill/kb-ask` →
+`~/.pi/agent/skills/kb-ask`). The extension is a **tRPC client** of the
+daemon (not an `@kb/fs` linker); it registers 8 KB tools (`kb_get`/
+`kb_list`/`kb_search`/`kb_graph`/`kb_update`/`kb_check_id`/
+`kb_resolve_path`/`kb_resolve_id`) — **no `kb_put`/`kb_delete`** (pi authors
+with native `write`/`edit`, then `kb_update` to reindex). Tools **throw on
+failure** (pi's `AgentToolResult` has no `isError` field). The `kb-ask`
+skill is a pure-markdown RAG instruction set (`/skill:kb-ask`): retrieve →
+lifecycle filter → context budget → grounded answer → cited (`[Title]
+(formatRef(ref))`) → verify-before-emit → "I don't know". The human review
+of answer/citation quality is a follow-up task (`review-kb-ask-qa-quality`).
+
 ## Do not attempt AI reproduction for
 
 - The **stand-up-silverbullet** task (manual): requires running Docker and

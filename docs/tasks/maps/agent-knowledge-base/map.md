@@ -14,6 +14,8 @@ tasks:
   - stand-up-silverbullet
   - kb-client-js-api
   - pi-adapter-skill-and-tools
+  - review-kb-ask-qa-quality
+  - remote-daemon-conditional-write
   - second-brain-curation
 ---
 
