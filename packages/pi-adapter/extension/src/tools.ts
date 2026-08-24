@@ -1,16 +1,18 @@
-// extension/src/tools.ts — registerKbTools(pi, client): register KB tools from the
-// pi-shaped binding subset. Each tool maps a daemon tRPC procedure → a pi tool.
+// extension/src/tools.ts — registerKbTools(pi, client, bindings): register KB tools
+// from a binding subset. Each tool maps a daemon tRPC procedure → a pi tool.
 // Tool args are typebox (pi's format), hand-mirrored from the daemon's Zod inputSchemas.
-// The piBindings loop is the structural gate: it iterates the full subset so a new
-// daemon method makes piBindings fail tsc until bound or EXCLUDED.
+// The bindings loop is the structural gate: it iterates the full subset so a new
+// daemon method makes bindings fail tsc until bound or EXCLUDED.
 //
-// NO kb_put/kb_delete — pi authors with native write/edit, then kb_update to reindex.
+// Local (default): piBindings (omits write) → 8 tools, NO kb_put/kb_delete.
+// Remote: fullBindings (includes write) → 10 tools incl kb_put/kb_delete.
+// The agent authors via kb_put/kb_delete through the daemon when remote.
 
 import { Type } from 'typebox';
 import { StringEnum } from '@earendil-works/pi-ai';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
-import { piBindings, flattenBindings } from '@kb/protocol';
-import type { FlatBinding } from '@kb/protocol';
+import { piBindings, fullBindings, flattenBindings } from '@kb/protocol';
+import type { FlatBinding, FullBindings } from '@kb/protocol';
 
 // ============================================================
 // Typebox parameter schemas — hand-mirrored from the Zod inputSchemas.
@@ -66,9 +68,22 @@ const ResolvePathParams = Type.Object({ ref: RefParam });
 // kb_resolve_id: localFs.resolveId({ref})
 const ResolveIdParams = Type.Object({ ref: RefParam });
 
+// kb_put: write.put({ref, content}) — mutation. The daemon stamps provenance +
+// validates + maintains index.md/log + reindexes. Used when the KB is remote
+// (the agent can't write to the daemon's bundle with native write/edit).
+const PutParams = Type.Object({
+  ref: RefParam,
+  content: Type.String({ description: 'Full note markdown (frontmatter + body)' }),
+});
+
+// kb_delete: write.delete({ref}) — mutation. Removes the note from the daemon bundle.
+const DeleteParams = Type.Object({ ref: RefParam });
+
 // ============================================================
 // Tool registration map: qualified name → {kb tool name, typebox params, label}
-// Only the 8 tools the agent needs (no kb_put/kb_delete, no indexAdmin in v1).
+// 10 tool specs total. The local case (piBindings) filters out kb_put/kb_delete
+// (write group EXCLUDED); the remote case (fullBindings) registers all 10.
+// No indexAdmin tools in v1 (the daemon has them but pi doesn't expose them).
 // ============================================================
 
 interface ToolSpec {
@@ -91,37 +106,58 @@ const TOOL_SPECS: ToolSpec[] = [
   { name: 'kb_check_id', label: 'KB Check ID', parameters: CheckIdParams, qualifiedName: 'search.checkId' },
   { name: 'kb_resolve_path', label: 'KB Resolve Path', parameters: ResolvePathParams, qualifiedName: 'localFs.resolvePath' },
   { name: 'kb_resolve_id', label: 'KB Resolve ID', parameters: ResolveIdParams, qualifiedName: 'localFs.resolveId' },
+  // Write group — only registered when `bindings` includes `write` (fullBindings / remote).
+  // With piBindings (local), `write.put` is EXCLUDED → filtered out by the binding gate.
+  { name: 'kb_put', label: 'KB Put', parameters: PutParams, qualifiedName: 'write.put' },
+  { name: 'kb_delete', label: 'KB Delete', parameters: DeleteParams, qualifiedName: 'write.delete' },
 ];
 
 // ============================================================
-// Structural gate: iterate piBindings and verify every binding we claim to
-// register exists. This catches a missing/renamed daemon method at compile time.
-// The flat list includes all piBindings entries (including indexAdmin); the
-// TOOL_SPECS map references specific qualifiedNames, and the loop below asserts
-// each spec's qualifiedName is present in the flattened binding list.
+// Structural gate: iterate fullBindings and verify every tool spec references
+// a real binding. This catches a missing/renamed daemon method at compile time.
+// We use fullBindings (all groups incl write) so kb_put/kb_delete specs validate.
+// At runtime, registerKbTools filters TOOL_SPECS by whether the spec's group is
+// present (non-EXCLUDED) in the passed bindings set.
 // ============================================================
 
-const _flatBindings: FlatBinding[] = flattenBindings(piBindings);
-const _bindingByName = new Map(_flatBindings.map((b) => [b.qualifiedName, b]));
-// Compile-time check: every tool spec's qualifiedName must exist in piBindings.
+const _fullFlatBindings: FlatBinding[] = flattenBindings(fullBindings);
+const _fullBindingByName = new Map(_fullFlatBindings.map((b) => [b.qualifiedName, b]));
+// Compile-time check: every tool spec's qualifiedName must exist in fullBindings.
 for (const spec of TOOL_SPECS) {
-  const b = _bindingByName.get(spec.qualifiedName);
+  const b = _fullBindingByName.get(spec.qualifiedName);
   if (!b) {
     throw new Error(`Tool spec ${spec.name} references unknown binding ${spec.qualifiedName}`);
   }
 }
 
 /**
- * Register all KB tools with the pi extension API.
- * Each tool calls the daemon via the tRPC client and returns a text result.
- * Errors are caught and returned as error tool results.
+ * Register KB tools with the pi extension API, filtered by the binding set.
  *
- * @param pi     The pi ExtensionAPI.
- * @param client The tRPC proxy client (typed PiAppRouter — no write group).
+ * - **Local** (`piBindings`, default): omits `write` group → 8 tools, no
+ *   `kb_put`/`kb_delete`. pi authors with native write/edit.
+ * - **Remote** (`fullBindings`): includes `write` group → 10 tools incl
+ *   `kb_put`/`kb_delete`. The agent authors through the daemon.
+ *
+ * Each tool calls the daemon via the tRPC client and returns a text result.
+ * Errors are caught and re-thrown with a clear message (pi contract: throw on
+ * failure).
+ *
+ * @param pi       The pi ExtensionAPI.
+ * @param client   The tRPC proxy client (PiAppRouter locally, AppRouter remotely).
+ * @param bindings The binding set: `piBindings` (local, default) or `fullBindings` (remote).
  */
-export function registerKbTools(pi: ExtensionAPI, client: KbClient): void {
+export function registerKbTools(pi: ExtensionAPI, client: KbClient, bindings: FullBindings = piBindings): void {
+  // Flatten the passed bindings (skips EXCLUDED entries) to determine which
+  // groups/methods are available. A tool spec is registered only if its
+  // qualifiedName exists in this set — piBindings (local) omits write.put/
+  // write.delete (EXCLUDED), fullBindings (remote) includes them.
+  const activeBindings: FlatBinding[] = flattenBindings(bindings);
+  const activeByName = new Map(activeBindings.map((b) => [b.qualifiedName, b]));
+
   for (const spec of TOOL_SPECS) {
-    const binding = _bindingByName.get(spec.qualifiedName)!;
+    const binding = activeByName.get(spec.qualifiedName);
+    if (!binding) continue; // this group/method is EXCLUDED in the passed bindings → skip
+
     const isQuery = binding.isQuery;
     const [group, method] = spec.qualifiedName.split('.') as [string, string];
 

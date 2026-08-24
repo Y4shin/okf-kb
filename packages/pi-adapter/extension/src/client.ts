@@ -1,19 +1,24 @@
-// extension/src/client.ts — createKbTrpcClient(url, token) -> a tRPC proxy client
-// typed against PiAppRouter (the daemon's AppRouter minus the 'write' group).
-// pi authors with native write/edit; the client type simply doesn't expose Write.
+// extension/src/client.ts — createKbTrpcClient<R>(url, token) -> a tRPC proxy client
+// typed against R (PiAppRouter for local, AppRouter for remote).
+// pi authors with native write/edit locally (PiAppRouter omits write);
+// remotely, AppRouter exposes write for kb_put/kb_delete.
 
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import type { PiAppRouter } from '@kb/protocol';
+import type { PiAppRouter, AppRouter } from '@kb/protocol';
 
-export type { PiAppRouter } from '@kb/protocol';
+export type { PiAppRouter, AppRouter } from '@kb/protocol';
+
+/** The router type parameter: PiAppRouter (local) or AppRouter (remote). */
+export type KbRouterType = PiAppRouter | AppRouter;
 
 /**
  * Build a tRPC proxy client for the KB daemon.
- * @param url   Base URL (e.g. "http://127.0.0.1:3000"); tRPC at <url>/trpc.
+ * @param url   Base URL (e.g. "http://127.0.0.1:30700"); tRPC at <url>/trpc.
  * @param token Bearer auth token.
+ * @typeParam R The router type: PiAppRouter (local, no write) or AppRouter (remote, full).
  */
-export function createKbTrpcClient(url: string, token: string) {
-  return createTRPCProxyClient<PiAppRouter>({
+export function createKbTrpcClient<R extends KbRouterType>(url: string, token: string) {
+  return createTRPCProxyClient<R>({
     links: [
       httpBatchLink({
         url: `${url}/trpc`,

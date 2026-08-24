@@ -13,7 +13,8 @@ import { startDaemon, type DaemonHandle } from '@kb/daemon';
 import { testManifest, note } from '../../fs/tests/helpers.js';
 import { createKbTrpcClient } from '../extension/src/client.js';
 import { registerKbTools } from '../extension/src/tools.js';
-import { piBindings, flattenBindings } from '@kb/protocol';
+import { isRemoteKb } from '../extension/src/config.js';
+import { piBindings, fullBindings, flattenBindings } from '@kb/protocol';
 import type { ExtensionAPI, ToolDefinition } from '@earendil-works/pi-coding-agent';
 
 let handle: DaemonHandle;
@@ -221,5 +222,182 @@ describe('pi extension: error mapping', () => {
     await expect(
       getTool.execute('test-id', { ref: 'concept:nonexistent' }, undefined, undefined, {} as never),
     ).rejects.toThrow(/KB daemon not running at http:\/\/127\.0\.0\.1:1|fetch|econnrefused|connect|network|unreachable|ECONN/i);
+  });
+});
+
+// ============================================================
+// isRemoteKb — string-based local/remote detection for KB_URL.
+// Determines whether the adapter registers the Write tools (kb_put/kb_delete).
+// The decision is a string check (hostname literal), NOT DNS resolution.
+// ============================================================
+
+describe('isRemoteKb', () => {
+  it('returns false for loopback addresses', () => {
+    expect(isRemoteKb('http://127.0.0.1:30700')).toBe(false);
+    expect(isRemoteKb('http://localhost:30700')).toBe(false);
+  });
+
+  it('returns false for IPv6 loopback (::1)', () => {
+    expect(isRemoteKb('http://[::1]:30700')).toBe(false);
+  });
+
+  it('returns false for a malformed URL (treat as local — do not activate Write)', () => {
+    expect(isRemoteKb('not a url')).toBe(false);
+    expect(isRemoteKb('')).toBe(false);
+    expect(isRemoteKb('http://::1:30700')).toBe(false); // unbracketed IPv6 throws
+  });
+
+  it('returns true for a hostname (not a loopback literal)', () => {
+    expect(isRemoteKb('http://kb.lan:30700')).toBe(true);
+    expect(isRemoteKb('http://kb.test:30700')).toBe(true);
+  });
+
+  it('returns true for a non-loopback IP', () => {
+    expect(isRemoteKb('http://192.168.1.10:30700')).toBe(true);
+    expect(isRemoteKb('http://10.0.0.1:30700')).toBe(true);
+  });
+
+  it('returns true for 0.0.0.0 (not a loopback literal — treated as remote)', () => {
+    expect(isRemoteKb('http://0.0.0.0:30700')).toBe(true);
+  });
+});
+
+// ============================================================
+// Remote case: registerKbTools(pi, client, fullBindings) registers 10 tools
+// incl. kb_put/kb_delete. The round-trip proves kb_put → kb_get → kb_delete.
+// Uses the same loopback test daemon but with fullBindings (simulates the remote
+// branch where isRemoteKb=true → fullBindings).
+// ============================================================
+
+describe('pi extension: remote tool registration (fullBindings)', () => {
+  it('registers exactly 10 tools incl kb_put and kb_delete', () => {
+    const pi = createStubPi();
+    const client = makeClient();
+    registerKbTools(pi, client, fullBindings);
+
+    const names = Array.from(pi.tools.keys()).sort();
+    expect(names).toHaveLength(10);
+    expect(names).toContain('kb_put');
+    expect(names).toContain('kb_delete');
+    // Still has the original 8
+    expect(names).toContain('kb_get');
+    expect(names).toContain('kb_list');
+    expect(names).toContain('kb_search');
+    expect(names).toContain('kb_graph');
+    expect(names).toContain('kb_update');
+    expect(names).toContain('kb_check_id');
+    expect(names).toContain('kb_resolve_path');
+    expect(names).toContain('kb_resolve_id');
+  });
+
+  it('local case (piBindings) still registers exactly 8 tools — no kb_put/kb_delete', () => {
+    const pi = createStubPi();
+    const client = makeClient();
+    registerKbTools(pi, client, piBindings);
+
+    const names = Array.from(pi.tools.keys()).sort();
+    expect(names).toHaveLength(8);
+    expect(names).not.toContain('kb_put');
+    expect(names).not.toContain('kb_delete');
+  });
+
+  it('default bindings is piBindings (backwards compatible — no arg)', () => {
+    const pi = createStubPi();
+    const client = makeClient();
+    registerKbTools(pi, client);
+
+    const names = Array.from(pi.tools.keys()).sort();
+    expect(names).toHaveLength(8);
+    expect(names).not.toContain('kb_put');
+    expect(names).not.toContain('kb_delete');
+  });
+});
+
+describe('pi extension: remote round-trip (kb_put/kb_delete via fullBindings)', () => {
+  const ref = 'concept:remote-test';
+
+  afterAll(async () => {
+    // Clean up: delete the note via the daemon if it exists
+    const client = makeClient();
+    try {
+      await client.write.delete.mutate({ ref });
+    } catch {
+      // already gone
+    }
+  });
+
+  it('kb_put creates a note, kb_get returns it, kb_delete removes it', async () => {
+    const pi = createStubPi();
+    const client = makeClient();
+    registerKbTools(pi, client, fullBindings);
+
+    const putTool = pi.tools.get('kb_put')!;
+    const getTool = pi.tools.get('kb_get')!;
+    const deleteTool = pi.tools.get('kb_delete')!;
+
+    const content = note(
+      {
+        type: 'concept',
+        id: 'concept:remote-test',
+        title: 'Remote Test Note',
+        description: 'A note created via kb_put (remote authoring path)',
+        tags: ['test', 'remote'],
+      },
+      'This note was authored through the daemon\'s write.put via kb_put.',
+    );
+
+    // 1. kb_put creates the note
+    const putResult = await putTool.execute('test-id', { ref, content }, undefined, undefined, {} as never);
+    expect(putResult.content).toHaveLength(1);
+    expect(putResult.content[0].type).toBe('text');
+
+    // 2. kb_get retrieves it
+    const getResult = await getTool.execute('test-id', { ref }, undefined, undefined, {} as never);
+    const getText = (getResult.content[0] as { text: string }).text;
+    const parsed = JSON.parse(getText);
+    expect(parsed.ref).toEqual({ slug: 'remote-test', ty: 'concept' });
+    expect(parsed.frontmatter.title).toBe('Remote Test Note');
+    expect(parsed.body).toContain('kb_put');
+
+    // 3. kb_delete removes it
+    await deleteTool.execute('test-id', { ref }, undefined, undefined, {} as never);
+
+    // 4. kb_get now throws (note is gone)
+    await expect(
+      getTool.execute('test-id', { ref }, undefined, undefined, {} as never),
+    ).rejects.toThrow();
+  });
+
+  it('kb_check_id confirms the note after kb_put', async () => {
+    const pi = createStubPi();
+    const client = makeClient();
+    registerKbTools(pi, client, fullBindings);
+
+    const putTool = pi.tools.get('kb_put')!;
+    const checkTool = pi.tools.get('kb_check_id')!;
+
+    const content = note(
+      {
+        type: 'concept',
+        id: 'concept:remote-test-checkid',
+        title: 'Remote Test Check ID',
+        description: 'A note for kb_check_id after kb_put',
+        tags: ['test'],
+      },
+      'Content for check_id test.',
+    );
+
+    await putTool.execute('test-id', { ref: 'concept:remote-test-checkid', content }, undefined, undefined, {} as never);
+
+    const checkResult = await checkTool.execute('test-id', { ref: 'concept:remote-test-checkid' }, undefined, undefined, {} as never);
+    const checkText = (checkResult.content[0] as { text: string }).text;
+    const parsed = JSON.parse(checkText);
+    // checkId returns a CheckReport: { ok: boolean, errors: Array }
+    expect(parsed.ok).toBe(true);
+    expect(Array.isArray(parsed.errors)).toBe(true);
+
+    // Clean up
+    const deleteTool = pi.tools.get('kb_delete')!;
+    await deleteTool.execute('test-id', { ref: 'concept:remote-test-checkid' }, undefined, undefined, {} as never);
   });
 });
