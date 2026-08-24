@@ -117,3 +117,28 @@ can't slip past a consumer) is enforced by `tsc` on the binding records.
   catches a forgotten method (`Property 'peek' is missing`) and schema
   drift (`_output … Property 'ref' is missing`). No codegen for wrappers
   (they loop the records); codegen is read-only OpenRPC (optional).
+
+## Implementation notes
+
+- **`@kb/protocol` depends on `@trpc/server` + `zod` (not only
+  `@kb/core`)** — slice 03 (daemon-trpc-and-mcp) revealed that the spec's
+  "protocol → core only" constraint was unsatisfiable. `buildRouter(kb)` is a
+  **runtime** function (not just a type): it imports `initTRPC` from
+  `@trpc/server` to construct the router at runtime. The CLI imports only
+  `type AppRouter = ReturnType<typeof buildRouter>` (a type-level
+  dependency — no runtime dep on the server libs beyond the type). The
+  dependency graph stays acyclic: protocol → core + trpc/server + zod;
+  daemon → protocol + core + fs; cli → protocol (type only). Future
+  readers: do NOT treat `@kb/protocol` as a pure-types package — it owns
+  the router factory (runtime) and the binding records (runtime).
+- **No-arg method records use `z.undefined()`**, not `z.void()`.
+  `GroupBindings<G>` maps `Parameters<F>[0]` for each method; for a
+  no-arg method that is `undefined`, not `void`. `z.void()` has `_output`
+  `void` (fails the mapped type); `z.undefined()` has `_output` `undefined`
+  (satisfies it). The core's own no-arg schemas (`CheckInputSchema` etc.)
+  use `z.void()` but were never assembled into a `satisfies
+  GroupBindings<G>` record, so the mismatch was latent until slice 03.
+- **Slice 03 (daemon-trpc-and-mcp) is done.** See its implementation
+  notes for the full list of deviations (MCP raw Zod schemas to
+  `registerTool`, `mcpServerFromBindings` internal, builder not used at
+  runtime, MCP stateless mode).

@@ -4,7 +4,7 @@ slug: daemon-trpc-and-mcp
 title: KB daemon — tRPC (/trpc) + MCP (/mcp) surfaces, Bearer auth, token from keyring
 task: ../task.md
 mode: afk
-status: todo
+status: done
 size: l
 blocked_by: [fs-groups-and-sqlite-index]
 ---
@@ -78,3 +78,81 @@ exhaustiveness guarantee).
   not network security.
 - No codegen for the wrappers — they loop the binding records. Codegen is
   read-only OpenRPC (optional here).
+
+## Implementation notes
+
+### What was built
+
+- **`@kb/protocol`** (`packages/protocol`): `fullBindings` (all 5 groups'
+  binding records, each entry `{inputSchema, meta}` `satisfies
+  GroupBindings<G>`), `piBindings` (pi-facing subset where `write.put`/
+  `write.delete` are `EXCLUDED`), `buildRouter(kb)` (loops the binding
+  records into a nested tRPC router — each group → a sub-router of
+  `.input(b.inputSchema).query/.mutation` procedures that call
+  `kb.<group>.<method>(input)`; no per-method handlers), and `type
+  AppRouter = ReturnType<typeof buildRouter>` (the CLI imports only this
+  type for `createTRPCProxyClient<AppRouter>()`). Also exports
+  `flattenBindings` (flat list of non-EXCLUDED bindings, used by the MCP
+  projection).
+- **`@kb/daemon`** (`packages/daemon`): `startDaemon(opts)` (builds
+  `CommonDeps`, constructs the real `Fs*` classes, mounts `/trpc` + `/mcp`
+  + `GET /` health, binds `127.0.0.1` only, returns `{url, port, token,
+  close()}`), `getOrMintToken()` (keyring via `@napi-rs/keyring` → `KB_TOKEN`
+  env → mint-on-first-run `crypto.randomUUID` + store in keyring), and
+  `buildCommonDeps(opts)` (resolves space from `KB_HOME`/`--space`/
+  `env-paths('kb').data`, loads `manifest.yaml` or `defaultManifest`,
+  constructs `DefaultUtility` + `TransformersEmbedder`).
+  - **`/trpc`**: tRPC router from `buildRouter(kb)` via the node-http
+    adapter, Bearer-authenticated.
+  - **`/mcp`**: MCP server on a **separate path** so MCP idiosyncrasies
+    don't touch tRPC. Stateless mode — a fresh `McpServer` +
+    `StreamableHTTPServerTransport` per `/mcp` POST. Bearer-authenticated.
+  - **Bearer auth** on both `/trpc` and `/mcp` via `checkBearer()`; token
+    from keyring + `KB_TOKEN` env + mint-on-first-run.
+  - **127.0.0.1 only**, no TLS.
+- **80 tests pass + 1 skipped** (the skipped one is the pre-existing
+  transformers.js embedder integration test in `@kb/fs`). Protocol: 9
+  tests (records exhaustiveness). Daemon: 21 tests (auth 5, deps 7,
+  server 9).
+
+### Deviations from the spec
+
+1. **`@kb/protocol` depends on `@trpc/server` + `zod` (not only
+   `@kb/core`)** — `buildRouter` is a runtime function (not just a type),
+   so the protocol package must import `@trpc/server` to construct the
+   router. The CLI imports only `type AppRouter` (a type-level dependency,
+   no runtime dep on the server libs beyond the type). The dependency
+   graph stays acyclic (protocol → core, protocol → trpc/server; daemon →
+   protocol → core/fs; cli → protocol for the type). The spec's
+   "protocol → core only" constraint was unsatisfiable because the router
+   factory needs `initTRPC` at runtime. **Update the cross-cutting note in
+   the task doc's Architecture notes** accordingly.
+2. **`mcpServerFromBindings` is internal** — it is NOT re-exported from
+   the daemon's public index (`src/index.ts`). Only `startDaemon`,
+   `getOrMintToken`, and `buildCommonDeps` are public. The MCP server is
+   created and managed internally by `startDaemon`'s `/mcp` handler.
+3. **MCP passes raw Zod schemas to `registerTool`** (the SDK converts to
+   JSON Schema internally) rather than calling `z.toJSONSchema` explicitly
+   as the acceptance criteria suggested. The `McpServer.registerTool` API
+   accepts a Zod schema object directly in its `inputSchema` field.
+4. **No-arg method records use `z.undefined()`** — the core's own no-arg
+   schemas (e.g. `CheckInputSchema`) use `z.void()`, but `z.void()` has
+   `_output` type `void`, not `undefined`, which doesn't satisfy
+   `GroupBindings<G>` (where `Parameters<F>[0]` for a no-arg method is
+   `undefined`). `z.undefined()` has `_output` type `undefined` and
+   satisfies the mapped type. This affects `spaceRoot`, `buildIndex`,
+   `rebuildIndexes`, and `check`.
+
+### Other implementation notes
+
+- **Builder not used at runtime**: the daemon constructs the real `Fs*`
+  classes directly rather than calling `createKb(deps).declare()…build()`.
+  The builder's `make*` stubs throw at call time; the builder's purpose is
+  compile-time type gating, which the `Fs*` classes satisfy via
+  `implements`.
+- **MCP stateless mode**: each `/mcp` POST creates a fresh `McpServer` +
+  `StreamableHTTPServerTransport` (no session ID). Binding registration is
+  cheap. A stateful mode could reuse a server but adds complexity — not
+  needed for v1.
+- **tRPC basePath**: the standalone adapter requires `basePath: '/trpc/'`
+  (trailing slash); the client's `httpBatchLink` URL is `${url}/trpc`.

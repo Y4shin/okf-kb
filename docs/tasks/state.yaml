@@ -1,2 +1,2 @@
 task: kb-client-js-api
-slice: daemon-trpc-and-mcp
+slice: cli-client
