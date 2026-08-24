@@ -4,9 +4,9 @@ type: manual
 slug: stand-up-silverbullet
 title: Stand up a local Silverbullet test fixture pointed at the global KB
 map: agent-knowledge-base
-status: ready
+status: done
 blocked_by:
-  - decide-deployment-and-layout
+- decide-deployment-and-layout
 ---
 
 ## Exact prerequisite

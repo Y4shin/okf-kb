@@ -1,2 +1,2 @@
-task: null
-slice: null
+task: kb-client-js-api
+slice: core-types-and-builder
