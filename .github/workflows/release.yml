@@ -11,7 +11,7 @@ name: Release
 #   1. accumulate `.changeset/*.md` files in normal PRs
 #   2. `npx changeset version`   # bumps all 6 packages + writes CHANGELOGs
 #   3. commit the bump + changelogs, tag `vX.Y.Z`, push the tag
-#   4. this workflow runs → build → test → `changeset publish --provenance`
+#   4. this workflow runs → build → test → `changeset publish` (provenance via NPM_CONFIG_PROVENANCE)
 #
 # Auth is npm Trusted Publishing (OIDC): no NPM_TOKEN secret. npm verifies
 # the publish came from this repo's `release.yml` workflow (register each
