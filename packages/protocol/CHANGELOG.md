@@ -1,5 +1,13 @@
 # @okf-kb/protocol
 
+## 0.1.3
+
+### Patch Changes
+
+- E2E test of the tag-triggered OIDC release after making the repo public (npm provenance requires a public source repo).
+- Updated dependencies []:
+  - @okf-kb/core@0.1.3
+
 ## 0.1.2
 
 ### Patch Changes
