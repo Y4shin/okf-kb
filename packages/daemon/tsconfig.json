@@ -1,1 +1,1 @@
-{"extends": "../../tsconfig.base.json", "compilerOptions": {"composite": true, "rootDir": "src", "outDir": "dist"}, "references": [{"path": "../core"}, {"path": "../fs"}, {"path": "../protocol"}], "include": ["src"]}
+{"extends": "../../tsconfig.base.json", "compilerOptions": {"composite": true, "rootDir": "src", "outDir": "dist"}, "references": [{"path": "../core"}, {"path": "../fs"}, {"path": "../protocol"}, {"path": "../auth"}], "include": ["src"]}

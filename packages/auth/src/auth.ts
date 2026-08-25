@@ -1,4 +1,4 @@
-// @okf-kb/daemon — auth: getOrMintToken. Read from OS keyring via @napi-rs/keyring
+// @okf-kb/auth — auth: getOrMintToken. Read from OS keyring via @napi-rs/keyring
 // (service 'kb', account 'daemon'); if absent, read KB_TOKEN env; if both absent,
 // mint a random token (crypto.randomUUID), store in keyring, return it.
 // Never log the token.
