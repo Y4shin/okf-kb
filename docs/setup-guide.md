@@ -38,13 +38,13 @@ Everything is local (loopback only, no TLS needed — the daemon binds
 ## 1. Clone + build the monorepo
 
 ```sh
-git clone git@github.com:Y4shin/pi-knowledgebase.git
-cd pi-knowledgebase
+git clone git@github.com:Y4shin/okf-kb.git
+cd okf-kb
 npm install          # workspace deps (zod, @trpc/*, better-sqlite3, @xenova/transformers, commander, ...)
 npm run build        # tsc --build across packages → dist/ (the daemon + CLI run from dist)
 ```
 
-Note the repo path (e.g. `/home/you/Projects/pi-knowledgebase`) — the
+Note the repo path (e.g. `/home/you/Projects/okf-kb`) — the
 systemd units reference it.
 
 ## 2. Create (or reuse) the global KB at `$KB_HOME`
@@ -209,7 +209,7 @@ echo "wrote ~/.config/kb/daemon.env (token: ${KB_TOKEN:0:8}…)"
 ### 4b. The systemd user unit
 
 ```sh
-REPO="$HOME/Projects/pi-knowledgebase"   # ← adjust to your clone path
+REPO="$HOME/Projects/okf-kb"   # ← adjust to your clone path
 cat > ~/.config/systemd/user/kb-daemon.service <<EOF
 [Unit]
 Description=KB daemon (tRPC + MCP, the agent-agnostic KB surface)
@@ -362,7 +362,7 @@ pulled a new SB image (`docker pull zefhemel/silverbullet:latest` then
 | systemd user units | `~/.config/systemd/user/kb-{silverbullet,daemon}.service` |
 | SB container | Docker `kb-sb` (managed by the unit) |
 | pi extension + skills | `~/.pi/agent/extensions/pi-kb`, `~/.pi/agent/skills/kb-{ask,curate,save-session,research}` (symlinks to the repo) |
-| The repo (code, dist) | your clone (`~/Projects/pi-knowledgebase`) |
+| The repo (code, dist) | your clone (`~/Projects/okf-kb`) |
 
 ## 10. Going remote later
 
