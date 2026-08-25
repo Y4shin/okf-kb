@@ -116,6 +116,44 @@ Out of scope for this slice and untouched: `@okf-kb/cli`,
 `@okf-kb/pi-adapter`, `startDaemon`/`buildCommonDeps`/`deps.ts` logic —
 all reserved for slice `02-wire-auth-into-cli-and-daemon`.
 
+### Slice 02 — wire-auth-into-cli-and-daemon (landed)
+
+Landed commit `d15d60c` ("wip: wire-auth-into-cli-and-daemon cli imports
+auth, drops daemon/core deps") on `slice/wire-auth-into-cli-and-daemon`,
+merged into `main` with `--no-ff` (slice branch deleted). Verified on
+`main`: `npm run typecheck` clean; `npm test` **218 passed / 1 skipped**.
+
+- **`@okf-kb/cli` runtime deps** = `@okf-kb/auth`, `@okf-kb/protocol`,
+  `@trpc/client`, `commander` — **no `@okf-kb/daemon`**, **no
+  `@okf-kb/fs`**, **no `@okf-kb/core`** (the latter two also dropped from
+  `dependencies` in this commit). The light-dep-tree goal is achieved:
+  the transitive closure of cli's runtime deps is `@napi-rs/keyring`,
+  `@trpc/server`, `zod`, `commander` — `@okf-kb/core` depends on `zod`
+  only, so `@xenova/transformers` / `better-sqlite3` (which live solely in
+  `@okf-kb/fs`) are unreachable from cli.
+- **`getOrMintToken`** imported statically from `@okf-kb/auth` at
+  `packages/cli/src/main.ts:7` (comments at lines 3 and 19 updated to
+  reference `@okf-kb/auth`).
+- **Dynamic `import('@okf-kb/daemon')`** kept at `main.ts:131` inside
+  `runDaemon` for the `okfkb daemon` subcommand — runtime-only, not a
+  `dependencies` entry. Removed in `split-daemon-binary`.
+- **pi-adapter extension** `packages/pi-adapter/extension/src/config.ts:6`
+  switched its `getOrMintToken` import to `@okf-kb/auth` (comment at line
+  18 updated).
+- **cli `tsconfig.json`** `references` adds `../auth`; `../daemon` kept
+  (needed for the dynamic import to typecheck in-workspace; removed in
+  `split-daemon-binary`).
+
+**Pre-existing devDeps gap (coherence-pass fix).** `@okf-kb/cli`'s
+`devDependencies` = `{@types/node, typescript, vitest}` and do **not**
+declare `@okf-kb/fs` or `@okf-kb/daemon`, yet the CLI test file
+(`packages/cli/tests/commands.test.ts`) imports `FakeEmbedder` from
+`@okf-kb/fs` and `startDaemon` from `@okf-kb/daemon`. These resolve only via
+npm workspace hoisting (root `node_modules`). Tests pass in the monorepo
+but the declared devDeps are incomplete — fix by adding `@okf-kb/fs` and
+`@okf-kb/daemon` to cli `devDependencies` in a coherence pass. This does
+not affect the light runtime dep tree.
+
 ## Existing abstractions to use
 
 - The `Embedder`/`Kb` DI seam in `@okf-kb/core` is unaffected — this is

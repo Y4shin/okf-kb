@@ -4,7 +4,7 @@ slug: wire-auth-into-cli-and-daemon
 title: @okf-kb/cli imports getOrMintToken from @okf-kb/auth; drop cli → daemon dep
 task: ../task.md
 mode: afk
-status: todo
+status: done
 size: m
 blocked_by: []
 ---
