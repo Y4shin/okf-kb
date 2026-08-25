@@ -1,4 +1,4 @@
-// @okf-kb/cli — main entry: parse argv, route to `okfkb daemon` or a group command.
+// @okf-kb/cli — main entry: parse argv, route to `okfkb config` or a group command.
 // Resolve the daemon URL (KB_URL env or --url flag or http://127.0.0.1:30700)
 // + token (KB_TOKEN env or keyring via @okf-kb/auth's getOrMintToken).
 // On unknown command / missing daemon -> clear error + exit 1.
@@ -12,15 +12,10 @@ import { registerAllCommands, type CommandContext } from './commands.js';
 const GLOBAL_FLAG_KEYS = new Set(['--url', '--token', '--json', '-u', '--help', '-h']);
 
 /**
- * runCli(argv) — parse, route to `okfkb daemon` or a group command.
+ * runCli(argv) — parse, route to `okfkb config` or a group command.
  * Returns the exit code (0 success, 1 error).
  */
 export async function runCli(argv: string[]): Promise<number> {
-  // `okfkb daemon` is special — it runs the daemon directly via @okf-kb/daemon.startDaemon.
-  if (argv[0] === 'daemon') {
-    return runDaemon(argv.slice(1));
-  }
-
   // `kb config` is special — prints config info, no daemon call needed.
   if (argv[0] === 'config') {
     return runConfig(argv.slice(1));
@@ -124,44 +119,6 @@ function extractGlobalOpts(argv: string[]): { globalOpts: { url?: string; token?
   }
 
   return { globalOpts, subcommandArgv };
-}
-
-/** `okfkb daemon` — runs the daemon via @okf-kb/daemon.startDaemon. */
-async function runDaemon(argv: string[]): Promise<number> {
-  const { startDaemon } = await import('@okf-kb/daemon');
-
-  // Parse --port and --space from argv. If --port is not given, leave port undefined so
-  // startDaemon applies its own default (KB_PORT env or 30700) — passing port:0 would
-  // force an ephemeral port and break the client's default-URL assumption.
-  let port: number | undefined;
-  let space: string | undefined;
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === '--port' || a === '-p') {
-      port = parseInt(argv[++i], 10);
-    } else if (a.startsWith('--port=')) {
-      port = parseInt(a.slice(7), 10);
-    } else if (a === '--space' || a === '-s') {
-      space = argv[++i];
-    } else if (a.startsWith('--space=')) {
-      space = a.slice(8);
-    }
-  }
-
-  const handle = await startDaemon({ port, space });
-  process.stderr.write(`okfkb daemon listening on ${handle.url}\n`);
-
-  // Keep running until the process is killed
-  return new Promise<number>((resolve) => {
-    process.on('SIGINT', async () => {
-      await handle.close();
-      resolve(0);
-    });
-    process.on('SIGTERM', async () => {
-      await handle.close();
-      resolve(0);
-    });
-  });
 }
 
 /** `okfkb config` — prints KB_URL, KB_HOME, token presence. */

@@ -13,7 +13,7 @@ npm run build               # build all packages (tsc --build)
 npm run typecheck           # tsc --build across the workspace (the enforcement gate)
 npm test                    # vitest run (90 tests + 1 skipped integration)
 # start the daemon (localhost, tRPC /trpc + MCP /mcp, Bearer auth):
-node packages/cli/bin/okfkb.js daemon            # or: npm i -g . && okfkb daemon
+node packages/daemon/bin/okfkbd.js            # or: npm i -g . && okfkbd
 # in another shell, run the CLI (a tRPC client of the daemon):
 node packages/cli/bin/okfkb.js read.get concept:foo
 node packages/cli/bin/okfkb.js write.put concept:foo --file note.md
@@ -51,8 +51,8 @@ see `docs/tasks/stand-up-silverbullet/evidence-stand-up-silverbullet.md`
 - `@okf-kb/daemon`: `@okf-kb/core`, `@okf-kb/fs`, `@okf-kb/protocol`, `@trpc/server`,
   `@modelcontextprotocol/sdk`, `@napi-rs/keyring` (token), `env-paths`
   (KB home), `yaml`, `zod`.
-- `@okf-kb/cli`: `@okf-kb/core`, `@okf-kb/protocol`, `@okf-kb/daemon`, `@trpc/client`,
-  `commander`. (No `@okf-kb/fs` in the CLI runtime — it is a tRPC client; tests
+- `@okf-kb/cli`: `@okf-kb/core`, `@okf-kb/protocol`, `@okf-kb/auth`, `@trpc/client`,
+  `commander`. (No `@okf-kb/fs` or `@okf-kb/daemon` in the CLI runtime — it is a tRPC client; tests
   import `FakeEmbedder` from `@okf-kb/fs` to stand up a daemon.)
 
 ## Reproduction
@@ -81,7 +81,7 @@ see `docs/tasks/stand-up-silverbullet/evidence-stand-up-silverbullet.md`
 Commands are the fully-qualified kebab-cased `group.method` (derived
 mechanically from the binding records): `okfkb read.get`, `okfkb write.put`,
 `okfkb search.search-unified`, `okfkb index-admin.check`, `okfkb local-fs.space-root`,
-`okfkb search.graph`. `okfkb daemon` and `okfkb config` are the only short names
+`okfkb search.graph`. `okfkb config` is the only short name
 (special-cased). `--json` for machine output; `--help` per command;
 exit code 1 on error / `index-admin.check` `ok:false`.
 
