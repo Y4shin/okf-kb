@@ -1,60 +1,58 @@
 name: Release
 
-# Manual-only until the owner has reviewed the workflow and the `release`
-# environment + trusted publishers are configured. The push trigger is
-# intentionally OFF — no pipeline runs without the owner's explicit
-# dispatch (or, later, an explicit release-PR merge). Re-enable `push`
-# only once the owner approves.
+# Tag-triggered releases. Pushing a `vX.Y.Z` tag is the explicit consent
+# to release — the workflow builds, tests, and publishes ALL packages at
+# the versions recorded in their package.json at that tag (lockstep, via
+# the `fixed` group in .changeset/config.json). No publish runs on a
+# plain merge to main; only a tag push triggers this workflow.
+#
+# Local release flow (no publish from your laptop after the one-time
+# first-publish):
+#   1. accumulate `.changeset/*.md` files in normal PRs
+#   2. `npx changeset version`   # bumps all 6 packages + writes CHANGELOGs
+#   3. commit the bump + changelogs, tag `vX.Y.Z`, push the tag
+#   4. this workflow runs → build → test → `changeset publish --provenance`
+#
+# Auth is npm Trusted Publishing (OIDC): no NPM_TOKEN secret. npm verifies
+# the publish came from this repo's `release.yml` workflow (register each
+# package as a Trusted Publisher — see docs/tasks/release-ci-workflow).
+
 on:
-  workflow_dispatch: {}
+  push:
+    tags:
+      - "v*"
 
 permissions:
-  contents: write      # changesets commits the version bump + changelog
-  pull-requests: write # changesets opens a "Version Packages" PR
-  id-token: write      # REQUIRED for npm OIDC trusted publishing
+  contents: write   # `changeset publish` may push git tags / release notes
+  id-token: write   # REQUIRED for npm OIDC trusted publishing
 
 jobs:
-  build:
-    name: Build & Test
+  release:
+    name: Build, Test & Publish
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck   # tsc --build: respects project-reference dependency order + emits dist/
-      - run: npm test
 
-  release:
-    name: Release (requires approval)
-    needs: build
-    runs-on: ubuntu-latest
-    environment: release   # GitHub environment with a required reviewer (the owner);
-                           # the job PAUSES here for manual approval before any publish.
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # changesets needs full history
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
+
       - name: Install dependencies
         run: npm ci
-      - name: Build
-        run: npm run typecheck   # tsc --build: dependency-ordered, emits dist/ for changeset publish
-      - name: Release (Changesets + npm Trusted Publishing / OIDC)
-        uses: changesets/action@v1
-        with:
-          publish: npx changeset publish --provenance
-          title: "chore(release): version packages"
-          commit: "chore(release): version packages"
+
+      - name: Build (tsc --build — dependency-ordered, emits dist/)
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Publish (Changesets + npm Trusted Publishing / OIDC)
+        run: npx changeset publish --provenance
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # NOTE: OIDC authenticates the publish — no long-lived npm token is set.
           NPM_CONFIG_PROVENANCE: "true"
+          # NOTE: OIDC authenticates the publish — no NPM_TOKEN / NODE_AUTH_TOKEN.
