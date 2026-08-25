@@ -2,9 +2,9 @@
 
 ## Start the dev environment
 
-This is an **npm-workspace monorepo**: `packages/core` (`@kb/core`),
-`packages/fs` (`@kb/fs`), `packages/protocol` (`@kb/protocol`),
-`packages/daemon` (`@kb/daemon`), and `packages/cli` (`@kb/cli`, the `okfkb`
+This is an **npm-workspace monorepo**: `packages/core` (`@okf-kb/core`),
+`packages/fs` (`@okf-kb/fs`), `packages/protocol` (`@okf-kb/protocol`),
+`packages/daemon` (`@okf-kb/daemon`), and `packages/cli` (`@okf-kb/cli`, the `okfkb`
 binary). All TS/Node, ESM.
 
 ```sh
@@ -34,8 +34,8 @@ see `docs/tasks/stand-up-silverbullet/evidence-stand-up-silverbullet.md`
 
 ## Dependencies (by package, as built)
 
-- `@kb/core`: `zod` (v4). Pure — no fs/embedder/vector-store deps.
-- `@kb/fs`: `better-sqlite3` (vectors as JSON-blob + JS cosine; FTS5 for the
+- `@okf-kb/core`: `zod` (v4). Pure — no fs/embedder/vector-store deps.
+- `@okf-kb/fs`: `better-sqlite3` (vectors as JSON-blob + JS cosine; FTS5 for the
   literal index; a plain `graph_edges` table — all three indexes in one
   `.kb/index.db`), `@xenova/transformers` (embedder), `marked` + `yaml`
   (markdown/YAML parse). **Note:** `sqlite-vec` was evaluated and dropped —
@@ -44,16 +44,16 @@ see `docs/tasks/stand-up-silverbullet/evidence-stand-up-silverbullet.md`
   `TransformersEmbedder` ~384). JSON-blob + JS cosine is O(n) per semantic
   query, acceptable for a single-bundle v1; revisit (ANN / HNSW) for large
   bundles. See `packages/fs/src/db.ts` for the rationale comment.
-- `@kb/protocol`: `@kb/core`, `@trpc/server`, `zod`. (Not "pure, depends
-  only on @kb/core" as originally specced — `buildRouter` is runtime here
+- `@okf-kb/protocol`: `@okf-kb/core`, `@trpc/server`, `zod`. (Not "pure, depends
+  only on @okf-kb/core" as originally specced — `buildRouter` is runtime here
   for type-sharing with the CLI; the graph stays acyclic: `cli→protocol`,
   `daemon→protocol,fs`.)
-- `@kb/daemon`: `@kb/core`, `@kb/fs`, `@kb/protocol`, `@trpc/server`,
+- `@okf-kb/daemon`: `@okf-kb/core`, `@okf-kb/fs`, `@okf-kb/protocol`, `@trpc/server`,
   `@modelcontextprotocol/sdk`, `@napi-rs/keyring` (token), `env-paths`
   (KB home), `yaml`, `zod`.
-- `@kb/cli`: `@kb/core`, `@kb/protocol`, `@kb/daemon`, `@trpc/client`,
-  `commander`. (No `@kb/fs` in the CLI runtime — it is a tRPC client; tests
-  import `FakeEmbedder` from `@kb/fs` to stand up a daemon.)
+- `@okf-kb/cli`: `@okf-kb/core`, `@okf-kb/protocol`, `@okf-kb/daemon`, `@trpc/client`,
+  `commander`. (No `@okf-kb/fs` in the CLI runtime — it is a tRPC client; tests
+  import `FakeEmbedder` from `@okf-kb/fs` to stand up a daemon.)
 
 ## Reproduction
 
@@ -91,7 +91,7 @@ The pi adapter lives in `packages/pi-adapter` (extension/ + skill/kb-ask/).
 Install it into the user's pi tree with `npm run install:pi` (symlinks
 `extension` → `~/.pi/agent/extensions/pi-kb` and `skill/kb-ask` →
 `~/.pi/agent/skills/kb-ask`). The extension is a **tRPC client** of the
-daemon (not an `@kb/fs` linker); it registers 8 KB tools (`kb_get`/
+daemon (not an `@okf-kb/fs` linker); it registers 8 KB tools (`kb_get`/
 `kb_list`/`kb_search`/`kb_graph`/`kb_update`/`kb_check_id`/
 `kb_resolve_path`/`kb_resolve_id`) — **no `kb_put`/`kb_delete`** (pi authors
 with native `write`/`edit`, then `kb_update` to reindex). Tools **throw on

@@ -271,7 +271,7 @@ The pi adapter is a tRPC client of the daemon + the `kb-ask`/`kb-curate`/
 
 ```sh
 cd "$REPO"
-npm run install:pi --workspace @kb/pi-adapter
+npm run install:pi --workspace @okf-kb/pi-adapter
 # → linked ~/.pi/agent/extensions/pi-kb → .../packages/pi-adapter/extension
 # → linked ~/.pi/agent/skills/kb-ask (and kb-curate, kb-save-session, kb-research)
 ```
@@ -333,9 +333,9 @@ pulled a new SB image (`docker pull zefhemel/silverbullet:latest` then
   `KB_DAEMON_HOST=0.0.0.0` (or a hostname) in the env file without TLS.
   For local use, keep `KB_DAEMON_HOST=127.0.0.1` (the default). For
   remote, follow `remote-deployment.md` (TLS reverse proxy + the gate).
-- **`Cannot find module '@kb/protocol'` in pi** — the extension's deps
+- **`Cannot find module '@okf-kb/protocol'` in pi** — the extension's deps
   aren't linked. `cd packages/pi-adapter/extension && npm install` (the
-  `@kb/*` are `file:` deps to the sibling packages). Then restart pi.
+  `@okf-kb/*` are `file:` deps to the sibling packages). Then restart pi.
 - **SB UI shows files but search is stale** — the daemon's index is
   separate from SB's client-side index. Run `okfkb index-admin.rebuild-indexes`
   if the daemon's search misses a note that's on disk.
