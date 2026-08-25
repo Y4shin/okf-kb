@@ -4,9 +4,9 @@
 // remotely, AppRouter exposes write for kb_put/kb_delete.
 
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import type { PiAppRouter, AppRouter } from '@kb/protocol';
+import type { PiAppRouter, AppRouter } from '@okf-kb/protocol';
 
-export type { PiAppRouter, AppRouter } from '@kb/protocol';
+export type { PiAppRouter, AppRouter } from '@okf-kb/protocol';
 
 /** The router type parameter: PiAppRouter (local) or AppRouter (remote). */
 export type KbRouterType = PiAppRouter | AppRouter;

@@ -1,13 +1,13 @@
-// @kb/cli — commands: generate a commander command per binding record.
+// @okf-kb/cli — commands: generate a commander command per binding record.
 // Loops fullBindings -> flattenBindings; for each binding, reads meta.cli
 // (positional vs --flag/-x, desc) and registers a commander subcommand that
 // parses args -> input object -> calls the tRPC client method -> prints result.
 
 import { readFileSync } from 'node:fs';
 import { Command } from 'commander';
-import { flattenBindings, fullBindings } from '@kb/protocol';
-import type { FlatBinding } from '@kb/protocol';
-import type { AppRouter } from '@kb/protocol';
+import { flattenBindings, fullBindings } from '@okf-kb/protocol';
+import type { FlatBinding } from '@okf-kb/protocol';
+import type { AppRouter } from '@okf-kb/protocol';
 import { createTrpcClient } from './client.js';
 
 /** The tRPC client proxy type (read.<method>.query / write.<method>.mutate). */

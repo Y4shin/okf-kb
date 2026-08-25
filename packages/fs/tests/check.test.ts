@@ -4,7 +4,7 @@ import { FsIndexAdmin } from '../src/index-admin.js';
 import { FakeEmbedder } from '../src/embedder.js';
 import { DefaultUtility } from '../src/utility.js';
 import { makeTmpBundle, cleanupTmpBundle, testManifest, note } from './helpers.js';
-import type { CommonDeps } from '@kb/core';
+import type { CommonDeps } from '@okf-kb/core';
 
 async function buildBundle(): Promise<{ space: string; deps: CommonDeps; write: FsWrite; admin: FsIndexAdmin }> {
   const space = await makeTmpBundle();

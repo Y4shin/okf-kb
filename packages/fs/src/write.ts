@@ -4,9 +4,9 @@
 import { mkdir, readFile, writeFile, rm, readdir } from 'node:fs/promises';
 import { join, relative, dirname } from 'node:path';
 import * as YAML from 'yaml';
-import { parseRef, parseActor, formatRef } from '@kb/core';
-import type { Write, RefInput, CommonDeps, PutResult, DeleteResult, Type } from '@kb/core';
-import { FrontmatterSchema } from '@kb/core';
+import { parseRef, parseActor, formatRef } from '@okf-kb/core';
+import type { Write, RefInput, CommonDeps, PutResult, DeleteResult, Type } from '@okf-kb/core';
+import { FrontmatterSchema } from '@okf-kb/core';
 import { FsLocalFs } from './local-fs.js';
 import { FsSearch } from './search.js';
 import { parseNoteFile } from './read.js';

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// @kb/cli — the `kb` binary entry. Imports the compiled main from dist.
+// @okf-kb/cli — the `okfkb` binary entry. Imports the compiled main from dist.
 import { runCli } from '../dist/src/index.js';
 
 const argv = process.argv.slice(2);

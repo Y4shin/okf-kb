@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { FsLocalFs } from '../src/local-fs.js';
 import { DefaultUtility } from '../src/utility.js';
 import { makeTmpBundle, cleanupTmpBundle, testManifest } from './helpers.js';
-import type { Base } from '@kb/core';
+import type { Base } from '@okf-kb/core';
 import { join } from 'node:path';
 
 describe('FsLocalFs', () => {

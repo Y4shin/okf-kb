@@ -1,14 +1,14 @@
-// @kb/daemon — mcp: mcpServerFromBindings(kb, bindings) — each binding → an MCP tool
+// @okf-kb/daemon — mcp: mcpServerFromBindings(kb, bindings) — each binding → an MCP tool
 // (name = `<group>.<method>`, inputSchema from the zod schema, handler calls
 // kb.<group>.<method>(input)). Uses @modelcontextprotocol/sdk's McpServer.
 // The MCP server is kept on its own /mcp path so its idiosyncrasies don't touch /trpc.
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import type { Kb } from '@kb/core';
-import { EXCLUDED } from '@kb/core';
-import { flattenBindings, type FlatBinding } from '@kb/protocol';
-import { fullBindings, type AllGroups, type FullBindings } from '@kb/protocol';
+import type { Kb } from '@okf-kb/core';
+import { EXCLUDED } from '@okf-kb/core';
+import { flattenBindings, type FlatBinding } from '@okf-kb/protocol';
+import { fullBindings, type AllGroups, type FullBindings } from '@okf-kb/protocol';
 
 /**
  * mcpServerFromBindings(kb, bindings?) — build an McpServer where each binding

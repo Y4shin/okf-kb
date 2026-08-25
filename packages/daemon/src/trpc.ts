@@ -1,14 +1,14 @@
-// @kb/daemon — trpc: mounts the tRPC router (built by @kb/protocol/buildRouter)
+// @okf-kb/daemon — trpc: mounts the tRPC router (built by @okf-kb/protocol/buildRouter)
 // with the Bearer auth middleware + the tRPC node-http adapter.
-// The pure router lives in @kb/protocol so the CLI shares the type; the daemon
+// The pure router lives in @okf-kb/protocol so the CLI shares the type; the daemon
 // just mounts it.
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
-import type { AppRouter } from '@kb/protocol';
-import { buildRouter } from '@kb/protocol';
-import type { AllGroups } from '@kb/protocol';
-import type { Kb } from '@kb/core';
+import type { AppRouter } from '@okf-kb/protocol';
+import { buildRouter } from '@okf-kb/protocol';
+import type { AllGroups } from '@okf-kb/protocol';
+import type { Kb } from '@okf-kb/core';
 
 /** Check a request's Authorization header against the expected Bearer token. */
 export function checkBearer(req: IncomingMessage, expectedToken: string): boolean {

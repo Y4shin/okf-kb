@@ -1,5 +1,5 @@
-// @kb/protocol — binding RECORDS (runtime values) for all consumer projections.
-// Pure: depends only on @kb/core (the GroupBindings type + per-method *InputSchema).
+// @okf-kb/protocol — binding RECORDS (runtime values) for all consumer projections.
+// Pure: depends only on @okf-kb/core (the GroupBindings type + per-method *InputSchema).
 // The daemon imports the runtime records + the router factory; the CLI imports only
 // the AppRouter type. This keeps cli→protocol and daemon→protocol→fs acyclic.
 
@@ -26,7 +26,7 @@ import {
   ResolveIdInputSchema,
   DirForInputSchema,
   PathForInputSchema,
-} from '@kb/core';
+} from '@okf-kb/core';
 
 // ============================================================
 // Per-group binding records. GroupBindings<G> maps over the methods of a

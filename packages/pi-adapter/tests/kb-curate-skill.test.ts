@@ -188,10 +188,10 @@ describe('kb-curate skill: remote note references kb_put / kb_delete', () => {
 describe('kb-curate skill: pure markdown — no code / no daemon imports', () => {
   const text = loadSkill();
 
-  it('does NOT contain @kb/fs imports or references', () => {
-    expect(text.toLowerCase()).not.toContain('@kb/fs');
-    expect(text.toLowerCase()).not.toContain('import @kb/fs');
-    expect(text.toLowerCase()).not.toContain("require('@kb/fs')");
+  it('does NOT contain @okf-kb/fs imports or references', () => {
+    expect(text.toLowerCase()).not.toContain('@okf-kb/fs');
+    expect(text.toLowerCase()).not.toContain('import @okf-kb/fs');
+    expect(text.toLowerCase()).not.toContain("require('@okf-kb/fs')");
   });
 
   it('does NOT contain daemon imports or tRPC client creation', () => {
@@ -199,10 +199,10 @@ describe('kb-curate skill: pure markdown — no code / no daemon imports', () =>
     expect(lc).not.toContain('createtrpcclient');
     expect(lc).not.toContain('createkbtrpcclient');
     expect(lc).not.toContain('httpbatchlink');
-    expect(lc).not.toContain('import \'@kb/daemon');
-    expect(lc).not.toContain('import \'@kb/protocol');
-    expect(lc).not.toContain('import "@kb/daemon');
-    expect(lc).not.toContain('import "@kb/protocol');
+    expect(lc).not.toContain('import \'@okf-kb/daemon');
+    expect(lc).not.toContain('import \'@okf-kb/protocol');
+    expect(lc).not.toContain('import "@okf-kb/daemon');
+    expect(lc).not.toContain('import "@okf-kb/protocol');
   });
 
   it('instructs the agent to call the tools by name (native write/edit + kb_* tools)', () => {

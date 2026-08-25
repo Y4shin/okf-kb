@@ -1,10 +1,10 @@
-// @kb/daemon — deps test: buildCommonDeps resolves space, loads manifest,
+// @okf-kb/daemon — deps test: buildCommonDeps resolves space, loads manifest,
 // constructs DefaultUtility + embedder. Test the manifest loading paths.
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { FakeEmbedder } from '@kb/fs';
+import { FakeEmbedder } from '@okf-kb/fs';
 import { buildCommonDeps, defaultManifest, loadManifestAsync } from '../src/deps.js';
 import { testManifest } from '../../fs/tests/helpers.js';
 

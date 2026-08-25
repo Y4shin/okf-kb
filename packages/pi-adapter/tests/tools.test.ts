@@ -1,6 +1,6 @@
 // tests/tools.test.ts — the round-trip test for the pi extension tools.
 // Start a test daemon (ephemeral port, tmp space, FakeEmbedder via buildCommonDeps
-// from @kb/daemon — mirroring packages/daemon/tests/server.test.ts). Build the
+// from @okf-kb/daemon — mirroring packages/daemon/tests/server.test.ts). Build the
 // tRPC client, register tools, and assert end-to-end behavior.
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -8,13 +8,13 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { FakeEmbedder } from '@kb/fs';
-import { startDaemon, type DaemonHandle } from '@kb/daemon';
+import { FakeEmbedder } from '@okf-kb/fs';
+import { startDaemon, type DaemonHandle } from '@okf-kb/daemon';
 import { testManifest, note } from '../../fs/tests/helpers.js';
 import { createKbTrpcClient } from '../extension/src/client.js';
 import { registerKbTools } from '../extension/src/tools.js';
 import { isRemoteKb } from '../extension/src/config.js';
-import { piBindings, fullBindings, flattenBindings } from '@kb/protocol';
+import { piBindings, fullBindings, flattenBindings } from '@okf-kb/protocol';
 import type { ExtensionAPI, ToolDefinition } from '@earendil-works/pi-coding-agent';
 
 let handle: DaemonHandle;

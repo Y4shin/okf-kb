@@ -1,11 +1,11 @@
-// @kb/protocol — buildRouter(kb): a tRPC router where each binding → a
+// @okf-kb/protocol — buildRouter(kb): a tRPC router where each binding → a
 // publicProcedure.input(b.inputSchema).query/.mutation that calls kb.<group>.<method>(input).
 // The router is BUILT here (runtime) so the daemon and any in-process caller share one impl;
 // the CLI imports only `type AppRouter` (no runtime dep on the server libs beyond the type).
 
 import { initTRPC } from '@trpc/server';
-import type { Kb } from '@kb/core';
-import { EXCLUDED } from '@kb/core';
+import type { Kb } from '@okf-kb/core';
+import { EXCLUDED } from '@okf-kb/core';
 import { fullBindings, piBindings } from './records.js';
 import type { AllGroups, FullBindings } from './records.js';
 

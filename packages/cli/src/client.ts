@@ -1,8 +1,8 @@
-// @kb/cli — client: createTrpcClient(url, token) -> a tRPC proxy typed AppRouter.
+// @okf-kb/cli — client: createTrpcClient(url, token) -> a tRPC proxy typed AppRouter.
 // The CLI uses this to call daemon procedures over HTTP with Bearer auth.
 
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '@kb/protocol';
+import type { AppRouter } from '@okf-kb/protocol';
 
 /**
  * Create a tRPC proxy client typed against the daemon's AppRouter.

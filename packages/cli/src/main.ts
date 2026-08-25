@@ -1,10 +1,10 @@
-// @kb/cli — main entry: parse argv, route to `kb daemon` or a group command.
+// @okf-kb/cli — main entry: parse argv, route to `kb daemon` or a group command.
 // Resolve the daemon URL (KB_URL env or --url flag or http://127.0.0.1:30700)
-// + token (KB_TOKEN env or keyring via @kb/daemon's getOrMintToken).
+// + token (KB_TOKEN env or keyring via @okf-kb/daemon's getOrMintToken).
 // On unknown command / missing daemon -> clear error + exit 1.
 
 import { Command, CommanderError } from 'commander';
-import { getOrMintToken } from '@kb/daemon';
+import { getOrMintToken } from '@okf-kb/daemon';
 import { createTrpcClient } from './client.js';
 import { registerAllCommands, type CommandContext } from './commands.js';
 
@@ -16,7 +16,7 @@ const GLOBAL_FLAG_KEYS = new Set(['--url', '--token', '--json', '-u', '--help', 
  * Returns the exit code (0 success, 1 error).
  */
 export async function runCli(argv: string[]): Promise<number> {
-  // `kb daemon` is special — it runs the daemon directly via @kb/daemon.startDaemon.
+  // `kb daemon` is special — it runs the daemon directly via @okf-kb/daemon.startDaemon.
   if (argv[0] === 'daemon') {
     return runDaemon(argv.slice(1));
   }
@@ -126,9 +126,9 @@ function extractGlobalOpts(argv: string[]): { globalOpts: { url?: string; token?
   return { globalOpts, subcommandArgv };
 }
 
-/** `kb daemon` — runs the daemon via @kb/daemon.startDaemon. */
+/** `kb daemon` — runs the daemon via @okf-kb/daemon.startDaemon. */
 async function runDaemon(argv: string[]): Promise<number> {
-  const { startDaemon } = await import('@kb/daemon');
+  const { startDaemon } = await import('@okf-kb/daemon');
 
   // Parse --port and --space from argv. If --port is not given, leave port undefined so
   // startDaemon applies its own default (KB_PORT env or 30700) — passing port:0 would

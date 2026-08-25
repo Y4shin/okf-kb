@@ -184,12 +184,12 @@ describe('kb-ask skill: tool references', () => {
 describe('kb-ask skill: no code / no daemon imports', () => {
   const text = loadSkill();
 
-  it('does NOT contain code blocks that import @kb/fs', () => {
-    // The skill is pure markdown instructions. It must not import @kb/fs or
+  it('does NOT contain code blocks that import @okf-kb/fs', () => {
+    // The skill is pure markdown instructions. It must not import @okf-kb/fs or
     // call the daemon directly in code blocks.
-    expect(text.toLowerCase()).not.toContain('@kb/fs');
-    expect(text.toLowerCase()).not.toContain('import @kb/fs');
-    expect(text.toLowerCase()).not.toContain('require(\'@kb/fs\')');
+    expect(text.toLowerCase()).not.toContain('@okf-kb/fs');
+    expect(text.toLowerCase()).not.toContain('import @okf-kb/fs');
+    expect(text.toLowerCase()).not.toContain('require(\'@okf-kb/fs\')');
   });
 
   it('does NOT contain code blocks that directly call the daemon or create a tRPC client', () => {
@@ -199,10 +199,10 @@ describe('kb-ask skill: no code / no daemon imports', () => {
     expect(text.toLowerCase()).not.toContain('createkbtrpcclient');
     expect(text.toLowerCase()).not.toContain('httpbatchlink');
     // Should not instruct importing the daemon or protocol
-    expect(text.toLowerCase()).not.toContain('import \'@kb/daemon');
-    expect(text.toLowerCase()).not.toContain('import \'@kb/protocol');
-    expect(text.toLowerCase()).not.toContain('import "@kb/daemon');
-    expect(text.toLowerCase()).not.toContain('import "@kb/protocol');
+    expect(text.toLowerCase()).not.toContain('import \'@okf-kb/daemon');
+    expect(text.toLowerCase()).not.toContain('import \'@okf-kb/protocol');
+    expect(text.toLowerCase()).not.toContain('import "@okf-kb/daemon');
+    expect(text.toLowerCase()).not.toContain('import "@okf-kb/protocol');
   });
 });
 

@@ -11,8 +11,8 @@
 import { Type } from 'typebox';
 import { StringEnum } from '@earendil-works/pi-ai';
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
-import { piBindings, fullBindings, flattenBindings } from '@kb/protocol';
-import type { FlatBinding, FullBindings } from '@kb/protocol';
+import { piBindings, fullBindings, flattenBindings } from '@okf-kb/protocol';
+import type { FlatBinding, FullBindings } from '@okf-kb/protocol';
 
 // ============================================================
 // Typebox parameter schemas — hand-mirrored from the Zod inputSchemas.

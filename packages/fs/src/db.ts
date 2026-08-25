@@ -2,7 +2,7 @@
 // JS cosine), literal index (FTS5), and graph index (graph_edges table). One db.
 //
 // Decision: sqlite-vec's vec0 virtual tables require a fixed embedding dimension
-// per table, but @kb/fs supports pluggable embedders with differing dims
+// per table, but @okf-kb/fs supports pluggable embedders with differing dims
 // (FakeEmbedder for tests vs TransformersEmbedder in prod). Rather than force a
 // dimension choice (or one table per dim), embeddings are stored as JSON text
 // blobs in a plain table and cosine similarity is computed in JS — the

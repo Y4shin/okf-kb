@@ -1,8 +1,8 @@
 // runChecks — bundle integrity rules (A1-A5,A7 per-note conformance handled by
 // DefaultUtility.validate; this module runs the cross-note bundle rules B1,
 // B3, B4, B7, B8 used by IndexAdmin.check and (per-note subset) Search.checkId).
-import type { CheckReport, Manifest, Ref, Type } from '@kb/core';
-import { RuleSchema, FrontmatterSchema } from '@kb/core';
+import type { CheckReport, Manifest, Ref, Type } from '@okf-kb/core';
+import { RuleSchema, FrontmatterSchema } from '@okf-kb/core';
 
 export interface BundleNote {
   ref: Ref;

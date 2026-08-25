@@ -1,5 +1,5 @@
 {
-  "name": "@kb/core",
+  "name": "@okf-kb/core",
   "type": "module",
   "version": "0.1.0",
   "main": "./dist/index.js",

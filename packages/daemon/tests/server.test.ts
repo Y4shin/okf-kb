@@ -1,4 +1,4 @@
-// @kb/daemon — server test: start the daemon on an ephemeral port with a tmp
+// @okf-kb/daemon — server test: start the daemon on an ephemeral port with a tmp
 // space + FakeEmbedder + minimal manifest; assert health, tRPC read.get after
 // write.put, 401 on missing/bad token, MCP tools/list + tools/call.
 // Plus: configurable bind host, non-localhost-TLS safety gate, capabilities
@@ -8,8 +8,8 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '@kb/protocol';
-import { FakeEmbedder } from '@kb/fs';
+import type { AppRouter } from '@okf-kb/protocol';
+import { FakeEmbedder } from '@okf-kb/fs';
 import { startDaemon, type DaemonHandle } from '../src/server.js';
 import { testManifest, note } from '../../fs/tests/helpers.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
