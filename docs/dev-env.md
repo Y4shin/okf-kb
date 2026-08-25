@@ -4,7 +4,7 @@
 
 This is an **npm-workspace monorepo**: `packages/core` (`@kb/core`),
 `packages/fs` (`@kb/fs`), `packages/protocol` (`@kb/protocol`),
-`packages/daemon` (`@kb/daemon`), and `packages/cli` (`@kb/cli`, the `kb`
+`packages/daemon` (`@kb/daemon`), and `packages/cli` (`@kb/cli`, the `okfkb`
 binary). All TS/Node, ESM.
 
 ```sh
@@ -13,12 +13,12 @@ npm run build               # build all packages (tsc --build)
 npm run typecheck           # tsc --build across the workspace (the enforcement gate)
 npm test                    # vitest run (90 tests + 1 skipped integration)
 # start the daemon (localhost, tRPC /trpc + MCP /mcp, Bearer auth):
-node packages/cli/bin/kb.js daemon            # or: npm i -g . && kb daemon
+node packages/cli/bin/okfkb.js daemon            # or: npm i -g . && okfkb daemon
 # in another shell, run the CLI (a tRPC client of the daemon):
-node packages/cli/bin/kb.js read.get concept:foo
-node packages/cli/bin/kb.js write.put concept:foo --file note.md
-node packages/cli/bin/kb.js search.search-unified "topic" --json
-node packages/cli/bin/kb.js index-admin.check
+node packages/cli/bin/okfkb.js read.get concept:foo
+node packages/cli/bin/okfkb.js write.put concept:foo --file note.md
+node packages/cli/bin/okfkb.js search.search-unified "topic" --json
+node packages/cli/bin/okfkb.js index-admin.check
 ```
 
 A local **Silverbullet test fixture** (Docker) is stood up and verified —
@@ -79,9 +79,9 @@ see `docs/tasks/stand-up-silverbullet/evidence-stand-up-silverbullet.md`
 ## CLI command form
 
 Commands are the fully-qualified kebab-cased `group.method` (derived
-mechanically from the binding records): `kb read.get`, `kb write.put`,
-`kb search.search-unified`, `kb index-admin.check`, `kb local-fs.space-root`,
-`kb search.graph`. `kb daemon` and `kb config` are the only short names
+mechanically from the binding records): `okfkb read.get`, `okfkb write.put`,
+`okfkb search.search-unified`, `okfkb index-admin.check`, `okfkb local-fs.space-root`,
+`okfkb search.graph`. `okfkb daemon` and `okfkb config` are the only short names
 (special-cased). `--json` for machine output; `--help` per command;
 exit code 1 on error / `index-admin.check` `ok:false`.
 

@@ -17,7 +17,7 @@ Everything is local (loopback only, no TLS needed — the daemon binds
 
 > **TL;DR:** clone the repo → `npm install && npm run build` → create
 > `$KB_HOME` (or reuse the existing one) → install two `systemctl --user`
-> units (one for the SB Docker container, one for the `kb daemon` Node
+> units (one for the SB Docker container, one for the `okfkb daemon` Node
 > process) → `npm run install:pi` → done. The agent and the human both
 > see the same KB.
 
@@ -188,7 +188,7 @@ Bearer auth.
 
 ### 4a. The daemon binary + a shared token
 
-The CLI binary is `packages/cli/bin/kb.js` (runs the built `dist/`). It
+The CLI binary is `packages/cli/bin/okfkb.js` (runs the built `dist/`). It
 needs a stable Bearer token — mint one and store it in a systemd
 environment file (NOT committed to the repo):
 
@@ -220,7 +220,7 @@ Wants=kb-silverbullet.service
 Type=exec
 EnvironmentFile=%h/.config/kb/daemon.env
 WorkingDirectory=$REPO
-ExecStart=$(which node) $REPO/packages/cli/bin/kb.js daemon
+ExecStart=$(which node) $REPO/packages/cli/bin/okfkb.js daemon
 Restart=on-failure
 RestartSec=5
 # the transformers.js model cache + the .kb/index.db live in the bundle's .kb/
@@ -241,7 +241,7 @@ EOF
 ```sh
 systemctl --user daemon-reload
 systemctl --user enable --now kb-daemon.service
-systemctl --user status kb-daemon.service   # active (running); "kb daemon listening on http://127.0.0.1:30700"
+systemctl --user status kb-daemon.service   # active (running); "okfkb daemon listening on http://127.0.0.1:30700"
 journalctl --user -u kb-daemon.service -n 20 # the listen line + any errors
 
 # capabilities (NOT Bearer-gated — health/caps check):
@@ -259,8 +259,8 @@ curl -fsS -H "Authorization: Bearer $(grep ^KB_TOKEN ~/.config/kb/daemon.env | c
 ```sh
 export KB_URL=http://127.0.0.1:30700
 export KB_TOKEN="$(grep ^KB_TOKEN ~/.config/kb/daemon.env | cut -d= -f2)"
-node $REPO/packages/cli/bin/kb.js index-admin.check    # bundle integrity (B7 flags orphaned glossary terms)
-node $REPO/packages/cli/bin/kb.js read.list --type concept
+node $REPO/packages/cli/bin/okfkb.js index-admin.check    # bundle integrity (B7 flags orphaned glossary terms)
+node $REPO/packages/cli/bin/okfkb.js read.list --type concept
 ```
 
 ## 5. Install the pi adapter (extension + skills)
@@ -306,9 +306,9 @@ pi -p "list the kb_* tools you have"   # or just start pi and ask
 - **Curate**: `/skill:kb-save-session` (distill this session into KB
   notes) or `/skill:kb-research <topic>` (research into KB notes).
 - **The daemon stays fresh**: on any write, `kb_update` reindexes the
-  one note; `kb index-admin.check` runs the integrity rules (B7 flags
+  one note; `okfkb index-admin.check` runs the integrity rules (B7 flags
   orphaned glossary terms). Rebuild the full index with
-  `kb index-admin.rebuild-indexes` if the index is lost.
+  `okfkb index-admin.rebuild-indexes` if the index is lost.
 
 ## 7. Managing the services
 
@@ -337,15 +337,15 @@ pulled a new SB image (`docker pull zefhemel/silverbullet:latest` then
   aren't linked. `cd packages/pi-adapter/extension && npm install` (the
   `@kb/*` are `file:` deps to the sibling packages). Then restart pi.
 - **SB UI shows files but search is stale** — the daemon's index is
-  separate from SB's client-side index. Run `kb index-admin.rebuild-indexes`
+  separate from SB's client-side index. Run `okfkb index-admin.rebuild-indexes`
   if the daemon's search misses a note that's on disk.
-- **`kb index-admin.check` fails on B7** — a glossary `term` is defined
-  but never linked. Either link it from a note, or `kb write.delete
+- **`okfkb index-admin.check` fails on B7** — a glossary `term` is defined
+  but never linked. Either link it from a note, or `okfkb write.delete
   term:<slug>` if it was a mistake. (B7 is a hard error by design —
   orphaned terms signal dead data.)
 - **transformers.js model download** — the first semantic search
   triggers a ~100–300 MB model download (cached under `.kb/`). On a
-  headless server, pre-warm it with `kb search.search-semantic
+  headless server, pre-warm it with `okfkb search.search-semantic
   "warmup"` once. (The `FakeEmbedder` in tests avoids this; the real
   daemon uses `TransformersEmbedder`.)
 - **systemd user services not running at boot** — run

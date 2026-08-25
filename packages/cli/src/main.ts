@@ -126,7 +126,7 @@ function extractGlobalOpts(argv: string[]): { globalOpts: { url?: string; token?
   return { globalOpts, subcommandArgv };
 }
 
-/** `kb daemon` — runs the daemon via @okf-kb/daemon.startDaemon. */
+/** `okfkb daemon` — runs the daemon via @okf-kb/daemon.startDaemon. */
 async function runDaemon(argv: string[]): Promise<number> {
   const { startDaemon } = await import('@okf-kb/daemon');
 
@@ -164,7 +164,7 @@ async function runDaemon(argv: string[]): Promise<number> {
   });
 }
 
-/** `kb config` — prints KB_URL, KB_HOME, token presence. */
+/** `okfkb config` — prints KB_URL, KB_HOME, token presence. */
 async function runConfig(argv: string[]): Promise<number> {
   const url = process.env.KB_URL ?? 'http://127.0.0.1:30700';
   const kbHome = process.env.KB_HOME ?? '(not set)';
