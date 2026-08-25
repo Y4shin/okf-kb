@@ -4,7 +4,7 @@ type: feature
 slug: rename-to-okf-kb-scope
 title: Rename all @kb/* packages to @okf-kb/* (match repo identity)
 map: npm-publishing
-status: ready
+status: done
 slices:
   - rename-scope-packages-and-imports
   - rename-bin-and-update-consumers
@@ -72,6 +72,35 @@ merged into `main` as `b4fcf76`.
 Slice 02 (`rename-bin-and-update-consumers`) remains `todo` — the
 `docs/setup-guide.md` / `docs/dev-env.md` consumer-doc updates are its
 scope, so the task is not yet fully landed.
+
+### Slice 02 — rename-bin-and-update-consumers (landed)
+
+Landed slice commits `6d15ea1` ("wip: rename-bin-and-update-consumers
+commander program name passing") + `bdcb11e` ("wip: rename-bin-and-update-consumers
+docs + daemon listen message passing") on
+`slice/rename-bin-and-update-consumers`, merged into `main` as
+`8441893` (slice/rename-bin-and-update-consumers branch deleted).
+
+- `packages/cli/src/main.ts`: `commander` program `.name('okfkb')` and
+  `.description('okfkb — knowledge base CLI ...')`; the special-case doc
+  comments updated `kb daemon` → `okfkb daemon` and `kb config` →
+  `okfkb config`; the daemon listen line changed to `okfkb daemon
+  listening on ...`. The `kb daemon` / `kb config` *subcommand* dispatch
+  is preserved (only the bin name changes this task; the `okfkbd` daemon
+  binary is a later task).
+- `packages/cli/tests/commands.test.ts`: added a built-bin `okfkb --help`
+  end-to-end test asserting `Usage: okfkb`, `okfkb — knowledge base CLI`,
+  and `not.toContain('Usage: kb')`. Test count rose 217 → 218 passed.
+- `docs/dev-env.md` and `docs/setup-guide.md`: every `kb` *command*
+  invocation → `okfkb` (e.g. `node packages/cli/bin/okfkb.js daemon`,
+  `okfkb read.get`, `ExecStart=.../bin/okfkb.js daemon`, the status
+  comment `okfkb daemon listening on ...`, troubleshooting `okfkb
+  index-admin.*`). The systemd unit name `kb-daemon.service` and the
+  `kb-silverbullet.service` unit were deliberately left unchanged (operator's
+  choice per slice constraints).
+- Verified post-merge on `main`: `npm run typecheck` clean; `npm test`
+  218 passed / 1 skipped. Out-of-scope items untouched (no `okfkbd` binary,
+  no auth extraction).
 
 ## Existing abstractions to use
 

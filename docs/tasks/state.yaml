@@ -1,2 +1,2 @@
-task: remote-daemon-conditional-write
-slice: remote-deployment-doc-and-roundtrip
+task: rename-to-okf-kb-scope
+slice: (done)

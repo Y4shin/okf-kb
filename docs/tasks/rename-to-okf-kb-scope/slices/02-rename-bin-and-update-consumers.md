@@ -4,7 +4,7 @@ slug: rename-bin-and-update-consumers
 title: Rename kb → okfkb bin, update setup-guide + dev-env docs
 task: ../task.md
 mode: afk
-status: todo
+status: done
 size: s
 blocked_by: []
 ---
