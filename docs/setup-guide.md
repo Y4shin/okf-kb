@@ -17,7 +17,7 @@ Everything is local (loopback only, no TLS needed — the daemon binds
 
 > **TL;DR:** clone the repo → `npm install && npm run build` → create
 > `$KB_HOME` (or reuse the existing one) → install two `systemctl --user`
-> units (one for the SB Docker container, one for the `okfkb daemon` Node
+> units (one for the SB Docker container, one for the `okfkbd` Node
 > process) → `npm run install:pi` → done. The agent and the human both
 > see the same KB.
 
@@ -188,7 +188,7 @@ Bearer auth.
 
 ### 4a. The daemon binary + a shared token
 
-The CLI binary is `packages/cli/bin/okfkb.js` (runs the built `dist/`). It
+The daemon binary is `packages/daemon/bin/okfkbd.js` (runs the built `dist/`). It
 needs a stable Bearer token — mint one and store it in a systemd
 environment file (NOT committed to the repo):
 
@@ -220,7 +220,7 @@ Wants=kb-silverbullet.service
 Type=exec
 EnvironmentFile=%h/.config/kb/daemon.env
 WorkingDirectory=$REPO
-ExecStart=$(which node) $REPO/packages/cli/bin/okfkb.js daemon
+ExecStart=$(which node) $REPO/packages/daemon/bin/okfkbd.js
 Restart=on-failure
 RestartSec=5
 # the transformers.js model cache + the .kb/index.db live in the bundle's .kb/
@@ -232,7 +232,7 @@ EOF
 
 - `EnvironmentFile` loads `KB_HOME`/`KB_PORT`/`KB_DAEMON_HOST`/`KB_TOKEN`
   (kept out of the unit + the repo).
-- `ExecStart` runs the daemon; it defaults to `127.0.0.1:30700` (loopback
+- `ExecStart` runs the daemon via `okfkbd`; it defaults to `127.0.0.1:30700` (loopback
   only — no TLS gate trips for localhost).
 - `WorkingDirectory` = the repo (so workspace `node_modules` resolve).
 
@@ -241,7 +241,7 @@ EOF
 ```sh
 systemctl --user daemon-reload
 systemctl --user enable --now kb-daemon.service
-systemctl --user status kb-daemon.service   # active (running); "okfkb daemon listening on http://127.0.0.1:30700"
+systemctl --user status kb-daemon.service   # active (running); "okfkbd listening on http://127.0.0.1:30700"
 journalctl --user -u kb-daemon.service -n 20 # the listen line + any errors
 
 # capabilities (NOT Bearer-gated — health/caps check):
