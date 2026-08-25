@@ -3,7 +3,7 @@
 // The default port 30700 matches the @okf-kb/cli default and avoids colliding with
 // Silverbullet's web UI (default port 3000).
 
-import { getOrMintToken } from '@okf-kb/daemon';
+import { getOrMintToken } from '@okf-kb/auth';
 
 export interface KbConfig {
   /** Base URL of the KB daemon (tRPC endpoint is <url>/trpc). */
@@ -15,7 +15,7 @@ export interface KbConfig {
 /**
  * Resolve KB daemon config.
  * - url: KB_URL env or default "http://127.0.0.1:30700"
- * - token: KB_TOKEN env, or @okf-kb/daemon's getOrMintToken (env > keyring > mint)
+ * - token: KB_TOKEN env, or @okf-kb/auth's getOrMintToken (env > keyring > mint)
  */
 export function resolveKbConfig(): KbConfig {
   const url = process.env.KB_URL ?? 'http://127.0.0.1:30700';
