@@ -1,2 +1,2 @@
-task: split-daemon-binary
-slice: add-okfkbd-bin-to-daemon (landed; slice 02 remove-daemon-subcommand-from-cli remains)
+task: split-daemon-binary (done)
+slice: remove-daemon-subcommand-from-cli (landed; all slices complete)

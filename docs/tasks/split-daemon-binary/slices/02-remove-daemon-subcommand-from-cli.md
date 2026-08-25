@@ -4,7 +4,7 @@ slug: remove-daemon-subcommand-from-cli
 title: Remove okfkb daemon subcommand; sever cli → daemon import; update docs
 task: ../task.md
 mode: afk
-status: todo
+status: done
 size: s
 blocked_by:
   - add-okfkbd-bin-to-daemon

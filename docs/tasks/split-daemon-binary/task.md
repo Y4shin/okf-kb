@@ -4,7 +4,7 @@ type: feature
 slug: split-daemon-binary
 title: Add okfkbd binary to @okf-kb/daemon; remove okfkb daemon subcommand
 map: npm-publishing
-status: ready
+status: done
 blocked_by:
   - extract-auth-package
 slices:
@@ -80,6 +80,18 @@ client — and it's light. The client no longer carries dead server code.
 - **`packages/daemon/tsconfig.json`**: `include` extended to `["src", "bin"]` so the `.js` shim is type-checked.
 - **CLI `okfkb daemon` subcommand preserved**: `packages/cli/src/main.ts` still routes `argv[0] === 'daemon'` → `runDaemon` (dynamic `import('@okf-kb/daemon')`). Slice 02 (`remove-daemon-subcommand-from-cli`) removes it.
 - **Cosmetic non-blockers** (TDD worker noted; no impact on acceptance): (1) duplicate stderr `data` handler in `bin.test.ts` (a top-level `proc.stderr.on('data', …)` accumulator plus the listen-line-matching `onData` handler) — a coherence/cleanup candidate; (2) `allowJs` is declarative-only via the `bin` include (no `allowJs:true` set) — the `.js` shim is still type-checked through the include, so behavior is unaffected.
+- **No source/test/config changes in this landing commit** — only slice-doc status + this task-doc note.
+
+### Slice 02 — remove-daemon-subcommand-from-cli (landed)
+
+- **Landed commits**: `25d3e09` ("wip: remove-daemon-subcommand-from-cli severance test + source edits passing") + `aa63c03` ("wip: remove-daemon-subcommand-from-cli dev-env okfkb daemon prose updated"), merged into `main` with `--no-ff` as `slice(split-daemon-binary): Remove okfkb daemon subcommand; cli now zero-ref to @okf-kb/daemon`; slice branch deleted.
+- **Verified**: `npm run typecheck` clean; `npm test` green — **221 passed / 1 skipped** (24 test files + 1 skipped).
+- **`packages/cli/src/main.ts`**: `runDaemon` function deleted; the `argv[0] === 'daemon'` early-return branch deleted; the `import('@okf-kb/daemon')` dynamic import gone; module header comment updated `daemon` → `config`. Commander program no longer mentions `daemon`.
+- **`packages/cli/tsconfig.json`**: the `../daemon` project reference removed from the `references` array (only `../auth`, `../core`, `../protocol` remain).
+- **CLI runtime deps**: `packages/cli/package.json` `dependencies` have no `@okf-kb/daemon` (light client). `@okf-kb/daemon` remains in `devDependencies` only — it is a test fixture for the daemon-backed client tests, not a runtime dep. okfkb config preserved.
+- **`packages/cli/tests/severance.test.ts`** (new, 2 tests): (1) grep gate — reads `src/main.ts` and asserts it contains no `import('@okf-kb/daemon')`, `from '@okf-kb/daemon'`, bare `@okf-kb/daemon`, or `runDaemon`; (2) `--help` no-daemon — captures stdout/stderr while invoking `runCli(['--help'])` and asserts no `^\s+daemon\s` subcommand listing line appears. An in-scope regression test automating the acceptance grep gate.
+- **Docs**: `docs/setup-guide.md` `ExecStart` → `okfkbd` (`$REPO/packages/cli/bin/okfkb.js daemon` → `$REPO/packages/daemon/bin/okfkbd.js`); the systemd status listen line → `okfkbd listening on …`; the TL;DR and §4a prose `okfkb daemon` → `okfkbd`. `docs/dev-env.md` start command → `node packages/daemon/bin/okfkbd.js`; the cli dep-footprint line drops `@okf-kb/daemon` from the runtime list (adds `@okf-kb/auth`); the short-names prose drops `okfkb daemon` (now only `okfkb config`).
+- **TDD worker note**: hit its turn budget after completing + committing the work (implementation fully landed on the slice branch); no re-dispatch needed — landing diagnosed via repo state.
 - **No source/test/config changes in this landing commit** — only slice-doc status + this task-doc note.
 
 
