@@ -8,7 +8,7 @@ import type { Frontmatter, Note } from './frontmatter.js';
 export interface Utility {
   computeId(type: Type, slug: Slug): IdRef;
   validate(note: Note): CheckReport;
-  // authoring helpers used by @kb/fs Write (arch spec: frontmatter/normalize/provenance)
+  // authoring helpers used by @okf-kb/fs Write (arch spec: frontmatter/normalize/provenance)
   frontmatterFor(type: Type, partial: Partial<Frontmatter>): Frontmatter;
   normalize(content: string): string;
   stampProvenance(frontmatter: Frontmatter, by: Actor): Frontmatter;

@@ -1,4 +1,4 @@
-// @kb/fs public entry — the five Fs* group implementations, DefaultUtility,
+// @okf-kb/fs public entry — the five Fs* group implementations, DefaultUtility,
 // the embedders, and the chunker/db helpers the daemon may need.
 export { DefaultUtility } from './utility.js';
 export { TransformersEmbedder, FakeEmbedder } from './embedder.js';

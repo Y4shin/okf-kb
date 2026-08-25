@@ -8,8 +8,8 @@ import type { ExtensionAPI } from '@earendil-works/pi-coding-agent';
 import { resolveKbConfig, isRemoteKb } from './config.js';
 import { createKbTrpcClient } from './client.js';
 import { registerKbTools } from './tools.js';
-import { piBindings, fullBindings } from '@kb/protocol';
-import type { PiAppRouter, AppRouter } from '@kb/protocol';
+import { piBindings, fullBindings } from '@okf-kb/protocol';
+import type { PiAppRouter, AppRouter } from '@okf-kb/protocol';
 
 export { resolveKbConfig, isRemoteKb } from './config.js';
 export { createKbTrpcClient } from './client.js';

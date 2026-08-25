@@ -1,4 +1,4 @@
-// @kb/cli — commands.test.ts: start a daemon on an ephemeral port with a tmp
+// @okf-kb/cli — commands.test.ts: start a daemon on an ephemeral port with a tmp
 // space + FakeEmbedder; run CLI commands against it via runCli (in-process,
 // stubbed argv + stdout/stderr capture). Assert --json output is valid JSON,
 // exit codes, round-trip, search, and check (conformant vs orphaned-glossary).
@@ -9,8 +9,8 @@ import { mkdtemp, mkdir, writeFile, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
-import { FakeEmbedder } from '@kb/fs';
-import { startDaemon, type DaemonHandle } from '@kb/daemon';
+import { FakeEmbedder } from '@okf-kb/fs';
+import { startDaemon, type DaemonHandle } from '@okf-kb/daemon';
 import { testManifest, note } from '../../fs/tests/helpers.js';
 import { runCli } from '../src/main.js';
 import { createTrpcClient } from '../src/client.js';
@@ -284,7 +284,7 @@ describe('CLI — built bin end-to-end', () => {
 
     function runBin(args: string[]): Promise<string> {
       return new Promise((resolve, reject) => {
-        const proc = spawn('node', ['packages/cli/bin/kb.js', ...args], {
+        const proc = spawn('node', ['packages/cli/bin/okfkb.js', ...args], {
           cwd: process.cwd(),
           stdio: ['ignore', 'pipe', 'pipe'],
         });

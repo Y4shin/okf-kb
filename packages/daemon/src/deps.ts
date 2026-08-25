@@ -1,4 +1,4 @@
-// @kb/daemon — deps: buildCommonDeps(opts) -> CommonDeps.
+// @okf-kb/daemon — deps: buildCommonDeps(opts) -> CommonDeps.
 // Resolve space = KB_HOME env or --space arg or env-paths('kb',{suffix:''}).data.
 // Load manifest.yaml from the space root (yaml parse -> ManifestSchema.parse);
 // if absent, a minimal default manifest (the 5 types + 8 predicates).
@@ -11,8 +11,8 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import envPaths from 'env-paths';
 import * as YAML from 'yaml';
-import { ManifestSchema, type CommonDeps, type Manifest, type Embedder } from '@kb/core';
-import { DefaultUtility, TransformersEmbedder } from '@kb/fs';
+import { ManifestSchema, type CommonDeps, type Manifest, type Embedder } from '@okf-kb/core';
+import { DefaultUtility, TransformersEmbedder } from '@okf-kb/fs';
 
 /** Options for buildCommonDeps. */
 export interface BuildDepsOptions {

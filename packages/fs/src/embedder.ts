@@ -1,6 +1,6 @@
 // Embedder implementations: TransformersEmbedder (real, in-process @xenova/transformers)
 // and FakeEmbedder (deterministic hash -> fixed-dim vector, no model download; used in tests).
-import type { Embedder, Vector } from '@kb/core';
+import type { Embedder, Vector } from '@okf-kb/core';
 import { createHash } from 'node:crypto';
 
 const FAKE_DIM = 32;

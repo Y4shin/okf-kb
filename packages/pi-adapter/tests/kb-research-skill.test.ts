@@ -3,7 +3,7 @@
 // review of synthesized-note and source quality (mode: hitl). This auto-gate asserts
 // the topic-research workflow steps are present and correctly ordered in the skill's
 // instructions, that the skill references kb-curate for shared rules, and that it is
-// pure markdown with no @kb/fs/daemon code and no kb_put/kb_delete.
+// pure markdown with no @okf-kb/fs/daemon code and no kb_put/kb_delete.
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -235,10 +235,10 @@ describe('kb-research skill: tool references', () => {
 describe('kb-research skill: no code / no daemon imports', () => {
   const text = loadSkill();
 
-  it('does NOT contain @kb/fs imports or references', () => {
-    expect(text.toLowerCase()).not.toContain('@kb/fs');
-    expect(text.toLowerCase()).not.toContain('import @kb/fs');
-    expect(text.toLowerCase()).not.toContain("require('@kb/fs')");
+  it('does NOT contain @okf-kb/fs imports or references', () => {
+    expect(text.toLowerCase()).not.toContain('@okf-kb/fs');
+    expect(text.toLowerCase()).not.toContain('import @okf-kb/fs');
+    expect(text.toLowerCase()).not.toContain("require('@okf-kb/fs')");
   });
 
   it('does NOT contain daemon imports or tRPC client creation', () => {
@@ -246,10 +246,10 @@ describe('kb-research skill: no code / no daemon imports', () => {
     expect(lc).not.toContain('createtrpcclient');
     expect(lc).not.toContain('createkbtrpcclient');
     expect(lc).not.toContain('httpbatchlink');
-    expect(lc).not.toContain('import \'@kb/daemon');
-    expect(lc).not.toContain('import \'@kb/protocol');
-    expect(lc).not.toContain('import "@kb/daemon');
-    expect(lc).not.toContain('import "@kb/protocol');
+    expect(lc).not.toContain('import \'@okf-kb/daemon');
+    expect(lc).not.toContain('import \'@okf-kb/protocol');
+    expect(lc).not.toContain('import "@okf-kb/daemon');
+    expect(lc).not.toContain('import "@okf-kb/protocol');
   });
 
   it('references kb_put and kb_delete in the remote KB note (slice 3: when the KB is remote, author with kb_put/kb_delete)', () => {

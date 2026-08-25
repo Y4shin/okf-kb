@@ -4,7 +4,7 @@ import { FsRead } from '../src/read.js';
 import { FakeEmbedder } from '../src/embedder.js';
 import { DefaultUtility } from '../src/utility.js';
 import { makeTmpBundle, cleanupTmpBundle, testManifest, note } from './helpers.js';
-import type { CommonDeps } from '@kb/core';
+import type { CommonDeps } from '@okf-kb/core';
 
 describe('FsRead', () => {
   let space: string;

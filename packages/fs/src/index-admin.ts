@@ -1,7 +1,7 @@
 // FsIndexAdmin — full rebuilds (buildIndex/rebuildIndexes) and the full-bundle
 // integrity walk (check).
 import { readFile } from 'node:fs/promises';
-import type { IndexAdmin, CheckReport, CommonDeps, Type } from '@kb/core';
+import type { IndexAdmin, CheckReport, CommonDeps, Type } from '@okf-kb/core';
 import { FsSearch } from './search.js';
 import { FsWrite } from './write.js';
 import { walkBundleNotes } from './walk.js';

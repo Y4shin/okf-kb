@@ -1,4 +1,4 @@
-// @kb/core — Zod-verified, string-coercing, framework-ready.
+// @okf-kb/core — Zod-verified, string-coercing, framework-ready.
 // Every type is a Zod schema; TS types are z.infer. Coercing schemas (Ref, Actor)
 // accept a raw string and transform it, so method params typed `RefInput`/`ActorInput`
 // accept either the structured form OR a raw string. Schemas are exported so

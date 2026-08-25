@@ -1,4 +1,4 @@
-// @kb/core — the typestate builder.
+// @okf-kb/core — the typestate builder.
 // createKb(deps) -> KbCollector (phase 1: DI collection) -> declare() -> Composer (phase 2: output declaration, gated) -> build() -> Kb<G>.
 // The gate is a TYPE, not a class: Composer<C,G> is a conditional-intersection type so each gated
 // withX exists on the public type iff C carries its required inputs. The runtime ComposerImpl
@@ -20,10 +20,10 @@ class ComposerImpl<C extends {}, G extends {}> {
   build(): G { return this.parts; }
 }
 
-// make* stubs — real impls live in @kb/fs (slice 2). The builder only assembles interfaces;
-// these return shells whose methods throw 'impl in @kb/fs' if called before @kb/fs is wired.
+// make* stubs — real impls live in @okf-kb/fs (slice 2). The builder only assembles interfaces;
+// these return shells whose methods throw 'impl in @okf-kb/fs' if called before @okf-kb/fs is wired.
 // (Stubs must NOT throw at withX-construction time, only when a method is invoked.)
-function notImpl(): never { throw new Error('impl in @kb/fs'); }
+function notImpl(): never { throw new Error('impl in @okf-kb/fs'); }
 function shell<T extends object>(methods: Record<string, (...a: any[]) => any>): T {
   const o: any = {};
   for (const name of Object.keys(methods)) o[name] = (...a: any[]) => notImpl();

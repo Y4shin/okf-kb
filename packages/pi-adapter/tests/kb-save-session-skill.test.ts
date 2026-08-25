@@ -235,11 +235,11 @@ describe('kb-save-session skill: tool references', () => {
 describe('kb-save-session skill: pure markdown — no code / no daemon imports', () => {
   const text = loadSkill();
 
-  it('does NOT contain @kb/fs imports or references', () => {
+  it('does NOT contain @okf-kb/fs imports or references', () => {
     const lc = text.toLowerCase();
-    expect(lc).not.toContain('@kb/fs');
-    expect(lc).not.toContain('import @kb/fs');
-    expect(lc).not.toContain("require('@kb/fs')");
+    expect(lc).not.toContain('@okf-kb/fs');
+    expect(lc).not.toContain('import @okf-kb/fs');
+    expect(lc).not.toContain("require('@okf-kb/fs')");
   });
 
   it('does NOT contain daemon imports or tRPC client creation', () => {
@@ -247,10 +247,10 @@ describe('kb-save-session skill: pure markdown — no code / no daemon imports',
     expect(lc).not.toContain('createtrpcclient');
     expect(lc).not.toContain('createkbtrpcclient');
     expect(lc).not.toContain('httpbatchlink');
-    expect(lc).not.toContain('import \'@kb/daemon');
-    expect(lc).not.toContain('import \'@kb/protocol');
-    expect(lc).not.toContain('import "@kb/daemon');
-    expect(lc).not.toContain('import "@kb/protocol');
+    expect(lc).not.toContain('import \'@okf-kb/daemon');
+    expect(lc).not.toContain('import \'@okf-kb/protocol');
+    expect(lc).not.toContain('import "@okf-kb/daemon');
+    expect(lc).not.toContain('import "@okf-kb/protocol');
   });
 });
 

@@ -2,7 +2,7 @@
 // dirs and load frontmatter+body+relative path, for bundle-wide integrity checks.
 import { readFile, readdir } from 'node:fs/promises';
 import { join, relative } from 'node:path';
-import type { Manifest, Ref, Type } from '@kb/core';
+import type { Manifest, Ref, Type } from '@okf-kb/core';
 import { parseNoteFile } from './read.js';
 import type { BundleNote } from './check.js';
 

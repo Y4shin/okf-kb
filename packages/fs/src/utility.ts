@@ -1,12 +1,12 @@
-// DefaultUtility — implements @kb/core's Utility interface: computeId/validate
+// DefaultUtility — implements @okf-kb/core's Utility interface: computeId/validate
 // (the core Utility contract) plus authoring helpers (frontmatterFor/normalize/
 // stampProvenance) used by FsWrite.
-import type { Utility } from '@kb/core';
-import type { IdRef, Slug, Type, Actor } from '@kb/core';
-import type { Frontmatter, Note } from '@kb/core';
-import type { CheckReport } from '@kb/core';
-import { FrontmatterSchema, RuleSchema } from '@kb/core';
-import type { Manifest } from '@kb/core';
+import type { Utility } from '@okf-kb/core';
+import type { IdRef, Slug, Type, Actor } from '@okf-kb/core';
+import type { Frontmatter, Note } from '@okf-kb/core';
+import type { CheckReport } from '@okf-kb/core';
+import { FrontmatterSchema, RuleSchema } from '@okf-kb/core';
+import type { Manifest } from '@okf-kb/core';
 
 /** rule name -> message, used by validate()'s per-note (A/B2/B5/B8) checks. */
 export interface UtilityOptions {

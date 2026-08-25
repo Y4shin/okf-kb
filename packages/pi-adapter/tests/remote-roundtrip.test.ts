@@ -13,12 +13,12 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdtemp, mkdir, writeFile, rm, readFile, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { FakeEmbedder } from '@kb/fs';
-import { startDaemon, type DaemonHandle } from '@kb/daemon';
+import { FakeEmbedder } from '@okf-kb/fs';
+import { startDaemon, type DaemonHandle } from '@okf-kb/daemon';
 import { testManifest, note } from '../../fs/tests/helpers.js';
 import { createKbTrpcClient } from '../extension/src/client.js';
 import { registerKbTools } from '../extension/src/tools.js';
-import { fullBindings, flattenBindings, type AppRouter } from '@kb/protocol';
+import { fullBindings, flattenBindings, type AppRouter } from '@okf-kb/protocol';
 import type { ExtensionAPI, ToolDefinition } from '@earendil-works/pi-coding-agent';
 
 let handle: DaemonHandle;

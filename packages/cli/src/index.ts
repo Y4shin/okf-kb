@@ -1,4 +1,4 @@
-// @kb/cli — public entry. Re-exports runCli (the main).
+// @okf-kb/cli — public entry. Re-exports runCli (the main).
 export { runCli } from './main.js';
 export { createTrpcClient } from './client.js';
 export type { AppRouter } from './client.js';

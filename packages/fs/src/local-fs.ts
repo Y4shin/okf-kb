@@ -1,8 +1,8 @@
 // FsLocalFs — resolves refs/types to filesystem paths using the manifest's
 // type -> dir map.
 import { join } from 'node:path';
-import { parseRef, formatRef } from '@kb/core';
-import type { LocalFs, RefInput, Type, Slug, Base } from '@kb/core';
+import { parseRef, formatRef } from '@okf-kb/core';
+import type { LocalFs, RefInput, Type, Slug, Base } from '@okf-kb/core';
 
 export class FsLocalFs implements LocalFs {
   constructor(private readonly deps: Base) {}

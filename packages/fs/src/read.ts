@@ -2,9 +2,9 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import * as YAML from 'yaml';
-import { parseRef, parseActor, formatActor } from '@kb/core';
-import type { Read, RefInput, ActorInput, Type, Tag, NoteView, ListEntry, Base } from '@kb/core';
-import { FrontmatterSchema } from '@kb/core';
+import { parseRef, parseActor, formatActor } from '@okf-kb/core';
+import type { Read, RefInput, ActorInput, Type, Tag, NoteView, ListEntry, Base } from '@okf-kb/core';
+import { FrontmatterSchema } from '@okf-kb/core';
 import { FsLocalFs } from './local-fs.js';
 
 export function parseNoteFile(raw: string): { frontmatter: Record<string, unknown>; body: string } {

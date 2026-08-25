@@ -1,4 +1,4 @@
-// @kb/core — group interfaces, per-method input schemas (with .meta tags), and the
+// @okf-kb/core — group interfaces, per-method input schemas (with .meta tags), and the
 // GroupBindings<G> exhaustiveness-enforcement mapped type. The same Zod input schemas +
 // GroupBindings records feed tRPC, MCP, and the CLI (one IDL, multiple projections).
 

@@ -3,8 +3,8 @@
 import { readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import type Database from 'better-sqlite3';
-import { parseRef, formatRef } from '@kb/core';
-import type { Search, RefInput, Ref, SearchHit, CheckReport, CommonDeps } from '@kb/core';
+import { parseRef, formatRef } from '@okf-kb/core';
+import type { Search, RefInput, Ref, SearchHit, CheckReport, CommonDeps } from '@okf-kb/core';
 import { splitByHeadings } from './chunk.js';
 import { openDb, deleteChunksForNote, type KbDb } from './db.js';
 import { parseNoteFile } from './read.js';

@@ -1,4 +1,4 @@
-// @kb/core — public entry. Re-exports the Zod-verified types, the typestate builder,
+// @okf-kb/core — public entry. Re-exports the Zod-verified types, the typestate builder,
 // the group interfaces, the per-method input schemas, and the GroupBindings enforcement type.
 
 export * from './types.js';

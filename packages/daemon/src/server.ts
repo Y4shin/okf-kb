@@ -1,15 +1,15 @@
-// @kb/daemon — server: startDaemon(opts) -> {url, host, port, token, close()}.
+// @okf-kb/daemon — server: startDaemon(opts) -> {url, host, port, token, close()}.
 // Build CommonDeps, build Kb via the typestate builder, build the tRPC router
-// via buildRouter(kb) from @kb/protocol, mount /trpc + /mcp + GET / (health +
+// via buildRouter(kb) from @okf-kb/protocol, mount /trpc + /mcp + GET / (health +
 // capabilities), bind 127.0.0.1 by default. Bearer auth on both /trpc and /mcp.
 // Non-localhost binds require TLS (or the KB_ALLOW_REMOTE_INSECURE escape hatch).
 
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createServer as createHttpsServer } from 'node:https';
 import { readFileSync } from 'node:fs';
-import { FsLocalFs, FsRead, FsSearch, FsWrite, FsIndexAdmin } from '@kb/fs';
-import type { AllGroups } from '@kb/protocol';
-import { fullBindings } from '@kb/protocol';
+import { FsLocalFs, FsRead, FsSearch, FsWrite, FsIndexAdmin } from '@okf-kb/fs';
+import type { AllGroups } from '@okf-kb/protocol';
+import { fullBindings } from '@okf-kb/protocol';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { buildCommonDeps, type BuildDepsOptions } from './deps.js';
 import { getOrMintToken } from './auth.js';
@@ -77,7 +77,7 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<Daemon
   const deps = buildCommonDeps(opts);
 
   // Construct the real Fs* implementations directly (the typestate builder's
-  // stubs throw; the Fs* classes implement the @kb/core group interfaces).
+  // stubs throw; the Fs* classes implement the @okf-kb/core group interfaces).
   const realKb: AllGroups = {
     localFs: new FsLocalFs(deps),
     read: new FsRead(deps),

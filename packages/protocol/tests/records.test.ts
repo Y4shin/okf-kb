@@ -1,9 +1,9 @@
-// @kb/protocol — records test: fullBindings has every method of every group.
+// @okf-kb/protocol — records test: fullBindings has every method of every group.
 // A missing method would fail tsc (GroupBindings enforces exhaustiveness); this
 // runtime test counts keys as a belt-and-suspenders check.
 import { describe, it, expect } from 'vitest';
-import { fullBindings, piBindings } from '@kb/protocol';
-import { EXCLUDED } from '@kb/core';
+import { fullBindings, piBindings } from '@okf-kb/protocol';
+import { EXCLUDED } from '@okf-kb/core';
 
 describe('fullBindings', () => {
   it('localFs has all 5 methods', () => {
