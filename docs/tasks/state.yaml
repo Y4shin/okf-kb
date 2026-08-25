@@ -1,2 +1,2 @@
-task: rename-to-okf-kb-scope
-slice: (done)
+task: extract-auth-package
+slice: create-auth-package
