@@ -4,7 +4,7 @@ type: feature
 slug: release-ci-workflow
 title: GitHub Actions release workflow — build, test, changeset publish via Trusted Publishing (OIDC)
 map: npm-publishing
-status: ready
+status: done
 blocked_by:
   - fix-package-metadata
   - adopt-changesets

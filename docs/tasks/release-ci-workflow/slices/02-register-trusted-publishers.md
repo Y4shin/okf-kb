@@ -1,10 +1,10 @@
 ---
 kind: slice
 slug: register-trusted-publishers
-title: Register each @okf-kb package as a Trusted Publisher (CLI, after release.yml exists)
+title: Register each @okf-kb package as a Trusted Publisher (CLI, after release.yml exists) + E2E test
 task: ../task.md
 mode: hitl
-status: todo
+status: done
 size: s
 blocked_by:
   - add-release-workflow

@@ -69,6 +69,12 @@ Critical rules (each was a real bug we hit):
   throws `ERR_MODULE_NOT_FOUND` on install. The `!dist/tsconfig.tsbuildinfo`
   negation excludes build metadata bloat (only needed if the package's
   `tsconfig.json` has `rootDir: "."` like `@okf-kb/cli`).
+- **`repository: { type: "git", url: "https://github.com/Y4shin/okf-kb.git", directory: "packages/<name>" }`**
+  — **required for npm provenance.** npm's sigstore verification matches
+  the provenance bundle's repo URL against `package.json`'s
+  `repository.url`; without it the publish is `E422: "repository.url"
+  is "", expected to match "https://github.com/Y4shin/okf-kb"`. (Hit
+  on the v0.1.3 release.)
 - **`prepublishOnly: "npm run build"`** — always rebuild before pack,
   so a stale `dist/` never ships.
 - **`license: "MIT"`** + a `LICENSE` file in the package dir (npm
@@ -278,6 +284,21 @@ trigger on the workflow — that would auto-run on every merge.
 - **OIDC publish `E404`** → the trusted-publisher registration doesn't
   match the workflow: `--file release.yml` (filename only) +
   `--repo Y4shin/okf-kb` must match the workflow's actual location.
+- **`changeset publish` errors `Unknown option --provenance`** → the
+  flag was never valid on `changeset publish` (only on `npm publish`);
+  older `@changesets/cli` silently ignored it, 2.31.0+ errors. Enable
+  provenance via `NPM_CONFIG_PROVENANCE=true` env on the publish step
+  (npm reads it when changeset shells out to `npm publish`). The
+  `release.yml` workflow already does this.
+- **OIDC publish `E422 ... repository visibility: "private"`** → npm
+  provenance (the SLSA attestation) requires a **public** source repo.
+  `Y4shin/okf-kb` was made public to enable provenance. If you fork this
+  setup to a private repo, drop provenance (remove `NPM_CONFIG_PROVENANCE`);
+  OIDC auth still works without the attestation.
+- **OIDC publish `E422 ... "repository.url" is ""`** → the package's
+  `package.json` has no `repository` field. npm provenance matches the
+  provenance bundle's repo URL against `repository.url`; add it (see the
+  mandatory-fields list above).
 
 ## See also
 
