@@ -4,7 +4,8 @@
   "license": "MIT",
   "version": "0.1.0",
   "files": [
-    "dist"
+    "dist",
+    "!dist/tsconfig.tsbuildinfo"
   ],
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -18,7 +19,7 @@
     "access": "public"
   },
   "bin": {
-    "okfkb": "./bin/okfkb.js"
+    "okfkb": "bin/okfkb.js"
   },
   "scripts": {
     "build": "tsc",
