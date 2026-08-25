@@ -1,2 +1,2 @@
-task: split-daemon-binary (done)
-slice: remove-daemon-subcommand-from-cli (landed; all slices complete)
+task: fix-package-metadata (done)
+slice: add-publish-metadata (landed; all slices complete)
