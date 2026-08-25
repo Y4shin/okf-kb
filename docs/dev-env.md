@@ -81,7 +81,7 @@ see `docs/tasks/stand-up-silverbullet/evidence-stand-up-silverbullet.md`
 Commands are the fully-qualified kebab-cased `group.method` (derived
 mechanically from the binding records): `okfkb read.get`, `okfkb write.put`,
 `okfkb search.search-unified`, `okfkb index-admin.check`, `okfkb local-fs.space-root`,
-`okfkb search.graph`. `okfkb daemon` and `okfkb config` are the only short names
+`okfkb search.graph`. `okfkb config` is the only short name
 (special-cased). `--json` for machine output; `--help` per command;
 exit code 1 on error / `index-admin.check` `ok:false`.
 
