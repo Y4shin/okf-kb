@@ -1,10 +1,10 @@
 // @okf-kb/cli — main entry: parse argv, route to `okfkb daemon` or a group command.
 // Resolve the daemon URL (KB_URL env or --url flag or http://127.0.0.1:30700)
-// + token (KB_TOKEN env or keyring via @okf-kb/daemon's getOrMintToken).
+// + token (KB_TOKEN env or keyring via @okf-kb/auth's getOrMintToken).
 // On unknown command / missing daemon -> clear error + exit 1.
 
 import { Command, CommanderError } from 'commander';
-import { getOrMintToken } from '@okf-kb/daemon';
+import { getOrMintToken } from '@okf-kb/auth';
 import { createTrpcClient } from './client.js';
 import { registerAllCommands, type CommandContext } from './commands.js';
 
