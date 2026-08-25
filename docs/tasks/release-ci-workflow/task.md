@@ -111,3 +111,15 @@ no long-lived token to leak or rotate. I never publish from my laptop
 - Building in CI matters because `dist/` is gitignored — the tarball
   must be built in the job before `changeset publish` (or rely on
   `prepublishOnly` per package, which is now set).
+
+## Implementation notes
+
+### Slice 01 — add-release-workflow (landed)
+
+Landed commit ee19333 (merge). `.github/workflows/release.yml` written:
+two jobs — `build` (auto on push to main / dispatch: checkout, setup-node
+24, npm ci, build, test) and `release` (needs build, `environment: release`
+approval gate, then changesets/action@v1 with `npx changeset publish
+--provenance`). OIDC-only: `id-token: write` permission, no NPM_TOKEN /
+NODE_AUTH_TOKEN anywhere. YAML valid; suite 221 passed / 1 skipped.
+Config-only slice; landed directly (no verify/deviation fan-out needed).
