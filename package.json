@@ -9,7 +9,10 @@
     "build": "npm run -ws --if-present build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --build"
+    "typecheck": "tsc --build",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "publish:changes": "changeset publish"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^1.0.0",

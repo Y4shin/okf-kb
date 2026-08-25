@@ -1,0 +1,1 @@
+{"changelog": ["@changesets/changelog-github", {"repo": "Y4shin/okf-kb"}], "access": "public", "baseBranch": "main", "updateInternalDependencies": "patch", "bumpVersionsWithWorkspaceProtocolOnly": false, "privatePackages": {"version": true, "tag": false}}
