@@ -1,8 +1,11 @@
 name: Release
 
+# Manual-only until the owner has reviewed the workflow and the `release`
+# environment + trusted publishers are configured. The push trigger is
+# intentionally OFF — no pipeline runs without the owner's explicit
+# dispatch (or, later, an explicit release-PR merge). Re-enable `push`
+# only once the owner approves.
 on:
-  push:
-    branches: [main]
   workflow_dispatch: {}
 
 permissions:
@@ -23,7 +26,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - run: npm run typecheck   # tsc --build: respects project-reference dependency order + emits dist/
       - run: npm test
 
   release:
@@ -44,7 +47,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Build
-        run: npm run build
+        run: npm run typecheck   # tsc --build: dependency-ordered, emits dist/ for changeset publish
       - name: Release (Changesets + npm Trusted Publishing / OIDC)
         uses: changesets/action@v1
         with:
