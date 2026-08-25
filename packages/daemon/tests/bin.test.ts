@@ -34,7 +34,6 @@ describe('daemon bin', () => {
     });
 
     let stderr = '';
-    proc.stderr.on('data', (d) => { stderr += d; });
 
     const url = await new Promise<string>((resolve, reject) => {
       const timer = setTimeout(() => {
