@@ -2,7 +2,7 @@
   "name": "@okf-kb/core",
   "type": "module",
   "license": "MIT",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "files": [
     "dist"
   ],
@@ -29,5 +29,10 @@
   "devDependencies": {
     "typescript": "~5.9",
     "vitest": "^3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Y4shin/okf-kb.git",
+    "directory": "packages/core"
   }
 }

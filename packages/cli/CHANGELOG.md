@@ -1,5 +1,14 @@
 # @okf-kb/cli
 
+## 0.1.4
+
+### Patch Changes
+
+- Add the `repository` field to each package (required by npm provenance: the provenance bundle's repo URL must match package.json).
+- Updated dependencies []:
+  - @okf-kb/protocol@0.1.4
+  - @okf-kb/auth@0.1.4
+
 ## 0.1.3
 
 ### Patch Changes
