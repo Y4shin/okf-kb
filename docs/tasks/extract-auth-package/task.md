@@ -4,7 +4,7 @@ type: feature
 slug: extract-auth-package
 title: Extract getOrMintToken into a light @okf-kb/auth package
 map: npm-publishing
-status: ready
+status: done
 blocked_by:
   - rename-to-okf-kb-scope
 slices:
