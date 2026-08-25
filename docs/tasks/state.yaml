@@ -1,2 +1,2 @@
-task: extract-auth-package
-slice: (done)
+task: split-daemon-binary
+slice: add-okfkbd-bin-to-daemon (landed; slice 02 remove-daemon-subcommand-from-cli remains)
