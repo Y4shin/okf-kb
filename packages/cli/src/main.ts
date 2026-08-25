@@ -1,4 +1,4 @@
-// @okf-kb/cli — main entry: parse argv, route to `kb daemon` or a group command.
+// @okf-kb/cli — main entry: parse argv, route to `okfkb daemon` or a group command.
 // Resolve the daemon URL (KB_URL env or --url flag or http://127.0.0.1:30700)
 // + token (KB_TOKEN env or keyring via @okf-kb/daemon's getOrMintToken).
 // On unknown command / missing daemon -> clear error + exit 1.
@@ -12,11 +12,11 @@ import { registerAllCommands, type CommandContext } from './commands.js';
 const GLOBAL_FLAG_KEYS = new Set(['--url', '--token', '--json', '-u', '--help', '-h']);
 
 /**
- * runCli(argv) — parse, route to `kb daemon` or a group command.
+ * runCli(argv) — parse, route to `okfkb daemon` or a group command.
  * Returns the exit code (0 success, 1 error).
  */
 export async function runCli(argv: string[]): Promise<number> {
-  // `kb daemon` is special — it runs the daemon directly via @okf-kb/daemon.startDaemon.
+  // `okfkb daemon` is special — it runs the daemon directly via @okf-kb/daemon.startDaemon.
   if (argv[0] === 'daemon') {
     return runDaemon(argv.slice(1));
   }
@@ -40,8 +40,8 @@ export async function runCli(argv: string[]): Promise<number> {
   // All other commands go through commander with generated subcommands.
   const program = new Command();
   program
-    .name('kb')
-    .description('kb — knowledge base CLI (tRPC client of the daemon)')
+    .name('okfkb')
+    .description('okfkb — knowledge base CLI (tRPC client of the daemon)')
     .helpOption('-h, --help', 'show help')
     .exitOverride(); // prevent commander from calling process.exit directly
 
@@ -126,7 +126,7 @@ function extractGlobalOpts(argv: string[]): { globalOpts: { url?: string; token?
   return { globalOpts, subcommandArgv };
 }
 
-/** `kb daemon` — runs the daemon via @okf-kb/daemon.startDaemon. */
+/** `okfkb daemon` — runs the daemon via @okf-kb/daemon.startDaemon. */
 async function runDaemon(argv: string[]): Promise<number> {
   const { startDaemon } = await import('@okf-kb/daemon');
 
@@ -149,7 +149,7 @@ async function runDaemon(argv: string[]): Promise<number> {
   }
 
   const handle = await startDaemon({ port, space });
-  process.stderr.write(`kb daemon listening on ${handle.url}\n`);
+  process.stderr.write(`okfkb daemon listening on ${handle.url}\n`);
 
   // Keep running until the process is killed
   return new Promise<number>((resolve) => {
@@ -164,7 +164,7 @@ async function runDaemon(argv: string[]): Promise<number> {
   });
 }
 
-/** `kb config` — prints KB_URL, KB_HOME, token presence. */
+/** `okfkb config` — prints KB_URL, KB_HOME, token presence. */
 async function runConfig(argv: string[]): Promise<number> {
   const url = process.env.KB_URL ?? 'http://127.0.0.1:30700';
   const kbHome = process.env.KB_HOME ?? '(not set)';

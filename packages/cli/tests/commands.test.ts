@@ -266,6 +266,42 @@ describe('CLI — createTrpcClient', () => {
 });
 
 describe('CLI — built bin end-to-end', () => {
+  it('okfkb --help prints the okfkb program name and description', async () => {
+    const distExists = existsSync(join(process.cwd(), 'packages/cli/dist/src/index.js'));
+    if (!distExists) {
+      console.warn('Skipping built bin help test: dist not found');
+      return;
+    }
+
+    const { spawn } = await import('node:child_process');
+    const stdout = await new Promise<string>((resolve, reject) => {
+      const proc = spawn('node', ['packages/cli/bin/okfkb.js', '--help'], {
+        cwd: process.cwd(),
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      let out = '';
+      let err = '';
+      proc.stdout.on('data', (d) => { out += d; });
+      proc.stderr.on('data', (d) => { err += d; });
+      const timer = setTimeout(() => {
+        proc.kill();
+        reject(new Error('timeout'));
+      }, 5000);
+      proc.on('close', (code) => {
+        clearTimeout(timer);
+        if (code !== 0) {
+          reject(new Error(`exit ${code}: ${err}`));
+        } else {
+          resolve(out);
+        }
+      });
+    });
+
+    expect(stdout).toContain('Usage: okfkb');
+    expect(stdout).toContain('okfkb \u2014 knowledge base CLI');
+    expect(stdout).not.toContain('Usage: kb');
+  });
+
   it('kb binary (child_process) round-trips write.put + read.get', async () => {
     // The CLI is already built (dist/ exists from the pre-test build step).
     const distExists = existsSync(join(process.cwd(), 'packages/cli/dist/src/index.js'));
