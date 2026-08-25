@@ -9,9 +9,14 @@
     "build": "npm run -ws --if-present build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --build"
+    "typecheck": "tsc --build",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "publish:changes": "changeset publish"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^1.0.0",
+    "@changesets/cli": "^3.0.1",
     "@earendil-works/pi-coding-agent": "^0.84.3",
     "@trpc/client": "^11.18.0",
     "typescript": "~5.9",
