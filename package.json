@@ -12,6 +12,8 @@
     "typecheck": "tsc --build"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^1.0.0",
+    "@changesets/cli": "^3.0.1",
     "@earendil-works/pi-coding-agent": "^0.84.3",
     "@trpc/client": "^11.18.0",
     "typescript": "~5.9",
