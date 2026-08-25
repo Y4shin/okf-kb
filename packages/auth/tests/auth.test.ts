@@ -1,4 +1,4 @@
-// @okf-kb/daemon — auth test: getOrMintToken env fallback + mint path.
+// @okf-kb/auth — auth test: getOrMintToken env fallback + mint path.
 // Keyring path is hard to test without mocking (may be unavailable in CI);
 // we test the env fallback and the mint path (both cleared).
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';

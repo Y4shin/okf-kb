@@ -12,7 +12,7 @@ import type { AllGroups } from '@okf-kb/protocol';
 import { fullBindings } from '@okf-kb/protocol';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { buildCommonDeps, type BuildDepsOptions } from './deps.js';
-import { getOrMintToken } from './auth.js';
+import { getOrMintToken } from '@okf-kb/auth';
 import { createTrpcHandler, AuthError, checkBearer } from './trpc.js';
 import { mcpServerFromBindings } from './mcp.js';
 
