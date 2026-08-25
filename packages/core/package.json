@@ -1,7 +1,11 @@
 {
   "name": "@okf-kb/core",
   "type": "module",
+  "license": "MIT",
   "version": "0.1.0",
+  "files": [
+    "dist"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -10,10 +14,14 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "typecheck:negatives": "tsc --noEmit --strict --skipLibCheck --lib es2022 --module nodenext --moduleResolution nodenext --target es2022 tests/negatives.test-d.ts"
+    "typecheck:negatives": "tsc --noEmit --strict --skipLibCheck --lib es2022 --module nodenext --moduleResolution nodenext --target es2022 tests/negatives.test-d.ts",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "zod": "^4.4"
